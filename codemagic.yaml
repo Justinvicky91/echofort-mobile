@@ -1,0 +1,58 @@
+workflows:
+  android-workflow:
+    name: Android Workflow
+    max_build_duration: 60
+    instance_type: mac_mini_m1
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      vars:
+        PACKAGE_NAME: "com.echofort.mobile"
+    scripts:
+      - name: Get Flutter packages
+        script: |
+          flutter packages pub get
+      - name: Build APK
+        script: |
+          flutter build apk --release
+    artifacts:
+      - build/app/outputs/flutter-apk/app-release.apk
+    publishing:
+      email:
+        recipients:
+          - justinvickyapp@gmail.com
+        notify:
+          success: true
+          failure: true
+  
+  ios-workflow:
+    name: iOS Workflow
+    max_build_duration: 60
+    instance_type: mac_mini_m1
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      vars:
+        BUNDLE_ID: "com.echofort.mobile"
+        XCODE_WORKSPACE: "Runner.xcworkspace"
+        XCODE_SCHEME: "Runner"
+    scripts:
+      - name: Get Flutter packages
+        script: |
+          flutter packages pub get
+      - name: Build IPA
+        script: |
+          flutter build ios --release --no-codesign
+          xcodebuild -workspace ios/$XCODE_WORKSPACE -scheme $XCODE_SCHEME -sdk iphoneos -configuration Release archive -archivePath build/ios/Runner.xcarchive
+          xcodebuild -exportArchive -archivePath build/ios/Runner.xcarchive -exportPath build/ios/ipa -exportOptionsPlist ios/exportOptions.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      email:
+        recipients:
+          - justinvickyapp@gmail.com
+        notify:
+          success: true
+          failure: true
