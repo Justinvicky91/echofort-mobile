@@ -1,23 +1,45 @@
 import java.util.Properties
 import java.io.FileInputStream
+import java.io.File
+import java.util.Base64
 
 plugins {
     id("com.android.application")
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-// Load keystore properties
-val keystorePropertiesFile = rootProject.file("key.properties")
+// Decode and load keystore for release signing
 val keystoreProperties = Properties()
-if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+val keystoreDir = File(projectDir, "keystore")
+val base64KeystoreFile = File(keystoreDir, "release.keystore.base64")
+val signingPropsFile = File(keystoreDir, "signing.properties")
+val decodedKeystoreFile = File(keystoreDir, "release.keystore")
+
+if (base64KeystoreFile.exists() && signingPropsFile.exists()) {
+    println("🔐 Decoding keystore from base64...")
+    
+    // Decode base64 keystore
+    val base64Content = base64KeystoreFile.readText().trim()
+    val keystoreBytes = Base64.getDecoder().decode(base64Content)
+    decodedKeystoreFile.writeBytes(keystoreBytes)
+    
+    // Load signing properties
+    signingPropsFile.inputStream().use { keystoreProperties.load(it) }
+    keystoreProperties["storeFile"] = decodedKeystoreFile.absolutePath
+    
+    println("✅ Keystore decoded and loaded successfully")
+} else if (rootProject.file("key.properties").exists()) {
+    // Fallback to local key.properties
+    println("📝 Loading keystore from key.properties")
+    keystoreProperties.load(FileInputStream(rootProject.file("key.properties")))
+} else {
+    println("⚠️  No keystore configuration found - using debug signing")
 }
 
 android {
     namespace = "com.echofort.echofort_mobile"
-    compileSdk = 34  // Fixed from flutter.compileSdkVersion to 34
+    compileSdk = 34
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -32,17 +54,19 @@ android {
     // Signing configurations
     signingConfigs {
         create("release") {
-            keyAlias = keystoreProperties["keyAlias"] as String?
-            keyPassword = keystoreProperties["keyPassword"] as String?
-            storeFile = keystoreProperties["storeFile"]?.let { file(it.toString()) }
-            storePassword = keystoreProperties["storePassword"] as String?
+            if (keystoreProperties.containsKey("storeFile")) {
+                keyAlias = keystoreProperties["keyAlias"] as String?
+                keyPassword = keystoreProperties["keyPassword"] as String?
+                storeFile = keystoreProperties["storeFile"]?.let { file(it.toString()) }
+                storePassword = keystoreProperties["storePassword"] as String?
+            }
         }
     }
 
     defaultConfig {
         applicationId = "com.echofort.echofort_mobile"
-        minSdk = 21  // Fixed minimum SDK
-        targetSdk = 34  // Fixed from flutter.targetSdkVersion to 34
+        minSdk = 21
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0.0"
     }
@@ -64,7 +88,6 @@ android {
         }
         
         debug {
-            // Debug build settings
             isMinifyEnabled = false
             signingConfig = signingConfigs.getByName("debug")
         }

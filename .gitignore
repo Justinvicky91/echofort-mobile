@@ -43,3 +43,9 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Keystore files (keep base64 version, ignore binary and local properties)
+*.keystore
+*.jks
+key.properties
+android/app/keystore/signing.properties
