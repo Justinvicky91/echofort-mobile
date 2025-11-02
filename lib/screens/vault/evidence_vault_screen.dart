@@ -50,7 +50,7 @@ class _EvidenceVaultScreenState extends State<EvidenceVaultScreen> with SingleTi
     {
       'id': 1,
       'sender': '+1234567890',
-      'preview': 'Congratulations! You won $1000...',
+      'preview': 'Congratulations! You won \$1000...',
       'date': '2024-11-01 12:00',
       'type': 'SMS Scam',
     },
