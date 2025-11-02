@@ -1,3 +1,6 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -7,9 +10,9 @@ plugins {
 
 // Load keystore properties
 val keystorePropertiesFile = rootProject.file("key.properties")
-val keystoreProperties = java.util.Properties()
+val keystoreProperties = Properties()
 if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(java.io.FileInputStream(keystorePropertiesFile))
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
 android {
@@ -31,14 +34,14 @@ android {
         create("release") {
             keyAlias = keystoreProperties["keyAlias"] as String?
             keyPassword = keystoreProperties["keyPassword"] as String?
-            storeFile = keystoreProperties["storeFile"]?.let { file(it) }
+            storeFile = keystoreProperties["storeFile"]?.let { file(it.toString()) }
             storePassword = keystoreProperties["storePassword"] as String?
         }
     }
 
     defaultConfig {
         applicationId = "com.echofort.echofort_mobile"
-        minSdk = flutter.minSdkVersion  // Fixed minimum SDK
+        minSdk = 21  // Fixed minimum SDK
         targetSdk = 34  // Fixed from flutter.targetSdkVersion to 34
         versionCode = 1
         versionName = "1.0.0"
