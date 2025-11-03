@@ -73,16 +73,10 @@ android {
 
     buildTypes {
         release {
-            // ProGuard/R8 ENABLED with ULTRA CONSERVATIVE rules
-            // Minimal optimization to preserve all functionality
-            isMinifyEnabled = true
-            isShrinkResources = true
-            
-            // Use ultra-conservative ProGuard rules
-            proguardFiles(
-                getDefaultProguardFile("proguard-android.txt"),
-                "proguard-rules.pro"
-            )
+            // ProGuard/R8 COMPLETELY DISABLED
+            // No obfuscation, no shrinking - full functionality preserved
+            isMinifyEnabled = false
+            isShrinkResources = false
             
             // Use release signing configuration
             signingConfig = signingConfigs.getByName("release")
