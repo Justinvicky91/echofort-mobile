@@ -29,22 +29,26 @@ class MyApp extends StatelessWidget {
         title: 'EchoFort',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          primaryColor: const Color(0xFF2196F3),
+          // Professional Guardian Theme - Navy Blue
+          primaryColor: const Color(0xFF1E3A8A), // Navy blue - trust & security
           colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF2196F3),
-            secondary: const Color(0xFFFFFFFF),
+            seedColor: const Color(0xFF1E3A8A),
+            primary: const Color(0xFF1E3A8A), // Navy blue
+            secondary: const Color(0xFF3B82F6), // Professional blue
+            tertiary: const Color(0xFF10B981), // Trust green
+            error: const Color(0xFFEF4444), // Alert red
             brightness: Brightness.light,
           ),
           scaffoldBackgroundColor: Colors.white,
           appBarTheme: const AppBarTheme(
             elevation: 0,
             centerTitle: true,
-            backgroundColor: Color(0xFF2196F3),
+            backgroundColor: Color(0xFF1E3A8A), // Navy blue
             foregroundColor: Colors.white,
           ),
           elevatedButtonTheme: ElevatedButtonThemeData(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2196F3),
+              backgroundColor: const Color(0xFF1E3A8A), // Navy blue
               foregroundColor: Colors.white,
               elevation: 2,
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),

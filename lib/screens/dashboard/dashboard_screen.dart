@@ -122,7 +122,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Container(
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF2196F3), Color(0xFFE3F2FD)],
+                    colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)], // Navy blue to professional blue
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -180,11 +180,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                     const SizedBox(height: 24),
                     const Text(
-                      'Your family is protected',
+                      'Guardian Protection Active',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 18,
                         color: Colors.white,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Real-time threat monitoring enabled',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white70,
                       ),
                     ),
                     const SizedBox(height: 16),

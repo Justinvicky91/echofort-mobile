@@ -15,31 +15,31 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   final List<OnboardingPage> _pages = [
     OnboardingPage(
-      title: 'Stop Scams Before You Answer',
-      description: 'Our AI analyzes every call in real-time. If it\'s a scam, you\'ll know instantly with 99.9% accuracy.',
-      icon: Icons.shield_outlined,
+      title: 'Guardian Protection System',
+      description: 'Military-grade AI protection against scams, harassment, and digital threats. Real-time analysis with 99.9% accuracy.',
+      icon: Icons.security,
       gradient: const LinearGradient(
-        colors: [Color(0xFF2196F3), Color(0xFFE3F2FD)],
+        colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
     ),
     OnboardingPage(
-      title: 'Protect Your Entire Family',
-      description: 'GPS tracking, content filtering, and scam protection for up to 5 family members.',
+      title: 'Complete Family Safety Suite',
+      description: 'Monitor, protect, and respond to threats across all family members. Comprehensive safety tools in one platform.',
       icon: Icons.family_restroom,
       gradient: const LinearGradient(
-        colors: [Color(0xFF2196F3), Color(0xFFFFFFFF)],
+        colors: [Color(0xFF1E3A8A), Color(0xFFFFFFFF)],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
       ),
     ),
     OnboardingPage(
-      title: 'Fight Back in 2 Minutes',
-      description: 'File police complaints with AI assistance. We handle the paperwork for you.',
+      title: 'Instant Legal Response System',
+      description: 'AI-assisted complaint filing with automatic evidence collection. Professional legal support at your fingertips.',
       icon: Icons.gavel,
       gradient: const LinearGradient(
-        colors: [Color(0xFF1976D2), Color(0xFFE3F2FD)],
+        colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
         begin: Alignment.topRight,
         end: Alignment.bottomLeft,
       ),

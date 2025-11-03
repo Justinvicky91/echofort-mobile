@@ -71,7 +71,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF2196F3), Color(0xFFFFFFFF)],
+            colors: [Color(0xFF1E3A8A), Color(0xFFFFFFFF)], // Navy blue to white
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             stops: [0.0, 0.3],
@@ -101,11 +101,22 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                     const SizedBox(height: 16),
                     const Text(
-                      'Start Your Free Trial',
+                      'Guardian Protection',
                       style: TextStyle(
-                        fontSize: 28,
+                        fontSize: 32,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
+                        letterSpacing: 1.2,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Start Your Free Trial',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white70,
                       ),
                       textAlign: TextAlign.center,
                     ),
