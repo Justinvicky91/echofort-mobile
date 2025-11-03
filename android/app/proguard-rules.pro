@@ -1,98 +1,214 @@
-# ========================================
-# EchoFort Mobile - ProGuard Rules (FIXED)
-# ========================================
-# This configuration preserves critical app components
-# while still providing code obfuscation and size reduction
+# ============================================================================
+# ECHOFORT MOBILE - ULTRA CONSERVATIVE PROGUARD RULES
+# Investment: ₹1+ Lakh - MUST WORK PERFECTLY
+# Strategy: Preserve EVERYTHING, minimal optimization, maximum compatibility
+# ============================================================================
 
-# ========================================
-# Flutter Core - MUST KEEP
-# ========================================
+# ============================================================================
+# OPTIMIZATION SETTINGS - MINIMAL OPTIMIZATION
+# ============================================================================
+-optimizationpasses 1
+-dontoptimize
+-dontpreverify
+-dontusemixedcaseclassnames
+-dontskipnonpubliclibraryclasses
+-dontskipnonpubliclibraryclassmembers
+-verbose
+
+# ============================================================================
+# KEEP ALL ATTRIBUTES - CRITICAL FOR REFLECTION
+# ============================================================================
+-keepattributes *Annotation*
+-keepattributes Signature
+-keepattributes InnerClasses
+-keepattributes EnclosingMethod
+-keepattributes SourceFile,LineNumberTable
+-keepattributes Exceptions
+-keepattributes *JavascriptInterface*
+-renamesourcefileattribute SourceFile
+
+# ============================================================================
+# FLUTTER FRAMEWORK - KEEP ABSOLUTELY EVERYTHING
+# ============================================================================
+-keep class io.flutter.** { *; }
 -keep class io.flutter.app.** { *; }
--keep class io.flutter.plugin.**  { *; }
--keep class io.flutter.util.**  { *; }
--keep class io.flutter.view.**  { *; }
--keep class io.flutter.**  { *; }
--keep class io.flutter.plugins.**  { *; }
+-keep class io.flutter.plugin.** { *; }
+-keep class io.flutter.util.** { *; }
+-keep class io.flutter.view.** { *; }
 -keep class io.flutter.embedding.** { *; }
+-keep class io.flutter.embedding.engine.** { *; }
+-keep class io.flutter.embedding.android.** { *; }
+-keep class io.flutter.plugins.** { *; }
+-keep interface io.flutter.** { *; }
 
-# Keep Flutter assets and resources
+# Keep Flutter's generated plugin registrant
+-keep class io.flutter.plugins.GeneratedPluginRegistrant { *; }
+
+# Keep Flutter activity and fragments
+-keep class io.flutter.embedding.android.FlutterActivity { *; }
+-keep class io.flutter.embedding.android.FlutterFragmentActivity { *; }
+-keep class io.flutter.embedding.android.FlutterFragment { *; }
+
+# Keep Flutter splash screen
+-keep class io.flutter.embedding.android.SplashScreen { *; }
+-keep class io.flutter.embedding.android.DrawableSplashScreen { *; }
+
+# Keep Flutter assets
 -keepclassmembers class * {
     @io.flutter.embedding.engine.plugins.FlutterPlugin$FlutterAssetManager *;
 }
 
-# ========================================
-# EchoFort Application - MUST KEEP
-# ========================================
+# ============================================================================
+# ECHOFORT APPLICATION - KEEP EVERYTHING
+# ============================================================================
 -keep class com.echofort.** { *; }
+-keep interface com.echofort.** { *; }
 -keepclassmembers class com.echofort.** { *; }
--keepattributes *Annotation*
+-keepclasseswithmembers class com.echofort.** { *; }
 
-# Keep all resources (splash screen, logo, etc.)
+# Keep MainActivity
+-keep class com.echofort.echofort_mobile.MainActivity { *; }
+
+# ============================================================================
+# ANDROID RESOURCES - KEEP ALL
+# ============================================================================
+-keep class **.R
+-keep class **.R$* { *; }
 -keepclassmembers class **.R$* {
     public static <fields>;
 }
--keep class **.R$*
 
-# ========================================
-# Android Core Components
-# ========================================
--keep public class * extends android.app.Activity
--keep public class * extends android.app.Application
--keep public class * extends android.app.Service
--keep public class * extends android.content.BroadcastReceiver
--keep public class * extends android.content.ContentProvider
+# Keep all drawable resources (splash screen, logo, icons)
+-keep class * extends android.graphics.drawable.Drawable { *; }
 
-# Keep custom views and their constructors
+# ============================================================================
+# ANDROID FRAMEWORK COMPONENTS
+# ============================================================================
+-keep public class * extends android.app.Activity { *; }
+-keep public class * extends android.app.Application { *; }
+-keep public class * extends android.app.Service { *; }
+-keep public class * extends android.content.BroadcastReceiver { *; }
+-keep public class * extends android.content.ContentProvider { *; }
+-keep public class * extends android.app.backup.BackupAgentHelper { *; }
+-keep public class * extends android.preference.Preference { *; }
+
+# Keep all views and their constructors
 -keep public class * extends android.view.View {
     public <init>(android.content.Context);
     public <init>(android.content.Context, android.util.AttributeSet);
     public <init>(android.content.Context, android.util.AttributeSet, int);
+    public <init>(android.content.Context, android.util.AttributeSet, int, int);
     public void set*(...);
+    *** get*();
 }
 
-# ========================================
-# AndroidX and Material Design
-# ========================================
+# Keep custom views
+-keepclasseswithmembers class * {
+    public <init>(android.content.Context, android.util.AttributeSet);
+}
+
+-keepclasseswithmembers class * {
+    public <init>(android.content.Context, android.util.AttributeSet, int);
+}
+
+# ============================================================================
+# ANDROIDX & MATERIAL DESIGN
+# ============================================================================
 -keep class androidx.** { *; }
 -keep interface androidx.** { *; }
 -keep class com.google.android.material.** { *; }
 -dontwarn androidx.**
--dontwarn com.google.android.material.**
 
-# ========================================
-# Google Play Services & Firebase
-# ========================================
--keep class com.google.android.gms.** { *; }
--dontwarn com.google.android.gms.**
+# ============================================================================
+# KOTLIN - KEEP ALL
+# ============================================================================
+-keep class kotlin.** { *; }
+-keep class kotlin.Metadata { *; }
+-keepclassmembers class kotlin.Metadata {
+    public <methods>;
+}
 
--keep class com.google.firebase.** { *; }
--dontwarn com.google.firebase.**
+# Kotlin coroutines
+-keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}
+-keepnames class kotlinx.coroutines.CoroutineExceptionHandler {}
+-keepclassmembernames class kotlinx.** {
+    volatile <fields>;
+}
 
-# ========================================
-# Gson (JSON serialization)
-# ========================================
--keepattributes Signature
--keepattributes *Annotation*
+# Kotlin intrinsics
+-keep class kotlin.jvm.internal.** { *; }
+
+# Kotlin enums
+-keepclassmembers class **$WhenMappings {
+    <fields>;
+}
+
+# ============================================================================
+# NATIVE METHODS
+# ============================================================================
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
+
+-keepclasseswithmembers class * {
+    native <methods>;
+}
+
+# ============================================================================
+# ENUMS - KEEP ALL
+# ============================================================================
+-keepclassmembers enum * {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+    **[] $VALUES;
+    public *;
+}
+
+# ============================================================================
+# PARCELABLE & SERIALIZABLE
+# ============================================================================
+-keep class * implements android.os.Parcelable {
+    public static final ** CREATOR;
+    *;
+}
+
+-keepclassmembers class * implements java.io.Serializable {
+    static final long serialVersionUID;
+    private static final java.io.ObjectStreamField[] serialPersistentFields;
+    private void writeObject(java.io.ObjectOutputStream);
+    private void readObject(java.io.ObjectInputStream);
+    java.lang.Object writeReplace();
+    java.lang.Object readResolve();
+    *;
+}
+
+# ============================================================================
+# GSON / JSON SERIALIZATION
+# ============================================================================
 -keep class com.google.gson.** { *; }
+-keep class sun.misc.Unsafe { *; }
 -keep class * implements com.google.gson.TypeAdapter
 -keep class * implements com.google.gson.TypeAdapterFactory
 -keep class * implements com.google.gson.JsonSerializer
 -keep class * implements com.google.gson.JsonDeserializer
 
-# Keep data model classes
+# Keep all fields with @SerializedName
 -keepclassmembers class * {
     @com.google.gson.annotations.SerializedName <fields>;
 }
 
-# ========================================
-# Retrofit & OkHttp (Networking)
-# ========================================
--dontwarn okhttp3.**
--dontwarn okio.**
--dontwarn retrofit2.**
+# Keep all model classes
+-keep class * {
+    @com.google.gson.annotations.SerializedName <fields>;
+}
+
+# ============================================================================
+# NETWORKING - RETROFIT & OKHTTP
+# ============================================================================
 -keep class okhttp3.** { *; }
--keep class retrofit2.** { *; }
 -keep interface okhttp3.** { *; }
+-keep class okio.** { *; }
+-keep class retrofit2.** { *; }
 -keep interface retrofit2.** { *; }
 
 # Retrofit annotations
@@ -105,127 +221,121 @@
     @retrofit2.http.* <methods>;
 }
 
-# ========================================
-# Kotlin
-# ========================================
--keep class kotlin.** { *; }
--keep class kotlin.Metadata { *; }
--dontwarn kotlin.**
--keepclassmembers class **$WhenMappings {
-    <fields>;
-}
--keepclassmembers class kotlin.Metadata {
-    public <methods>;
+-keepclasseswithmembers class * {
+    @retrofit2.http.* <methods>;
 }
 
-# Kotlin Coroutines
--keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}
--keepnames class kotlinx.coroutines.CoroutineExceptionHandler {}
--keepclassmembernames class kotlinx.** {
-    volatile <fields>;
-}
+# ============================================================================
+# WEBVIEW
+# ============================================================================
+-keep class android.webkit.** { *; }
 
-# ========================================
-# Native Methods
-# ========================================
--keepclasseswithmembernames class * {
-    native <methods>;
-}
-
-# ========================================
-# Enums
-# ========================================
--keepclassmembers enum * {
-    public static **[] values();
-    public static ** valueOf(java.lang.String);
-    **[] $VALUES;
-    public *;
-}
-
-# ========================================
-# Parcelable & Serializable
-# ========================================
--keepclassmembers class * implements android.os.Parcelable {
-    public static final ** CREATOR;
-}
-
--keepclassmembers class * implements java.io.Serializable {
-    static final long serialVersionUID;
-    private static final java.io.ObjectStreamField[] serialPersistentFields;
-    private void writeObject(java.io.ObjectOutputStream);
-    private void readObject(java.io.ObjectInputStream);
-    java.lang.Object writeReplace();
-    java.lang.Object readResolve();
-}
-
-# ========================================
-# WebView
-# ========================================
 -keepclassmembers class * extends android.webkit.WebViewClient {
     public void *(android.webkit.WebView, java.lang.String, android.graphics.Bitmap);
     public boolean *(android.webkit.WebView, java.lang.String);
-}
--keepclassmembers class * extends android.webkit.WebViewClient {
     public void *(android.webkit.WebView, java.lang.String);
 }
 
-# ========================================
-# Security & Encryption
-# ========================================
--keep class javax.crypto.** { *; }
--keep class javax.security.** { *; }
-
-# ========================================
-# Debugging & Stack Traces
-# ========================================
--keepattributes SourceFile,LineNumberTable
--renamesourcefileattribute SourceFile
--keepattributes *Annotation*,Signature,Exception
-
-# Keep exception classes
--keep public class * extends java.lang.Exception
-
-# ========================================
-# Optimization Settings
-# ========================================
--optimizationpasses 3
--dontusemixedcaseclassnames
--dontskipnonpubliclibraryclasses
--dontpreverify
--verbose
-
-# ========================================
-# Logging (Remove in release)
-# ========================================
--assumenosideeffects class android.util.Log {
-    public static *** d(...);
-    public static *** v(...);
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
 }
 
-# ========================================
-# Google Play Core (Flutter deferred components)
-# ========================================
-# Only warn about missing classes, don't fail the build
--dontwarn com.google.android.play.core.splitcompat.SplitCompatApplication
--dontwarn com.google.android.play.core.splitinstall.SplitInstallManager
--dontwarn com.google.android.play.core.splitinstall.SplitInstallManagerFactory
--dontwarn com.google.android.play.core.splitinstall.SplitInstallRequest$Builder
--dontwarn com.google.android.play.core.splitinstall.SplitInstallRequest
--dontwarn com.google.android.play.core.splitinstall.SplitInstallStateUpdatedListener
--dontwarn com.google.android.play.core.tasks.OnFailureListener
--dontwarn com.google.android.play.core.tasks.OnSuccessListener
--dontwarn com.google.android.play.core.tasks.Task
+# ============================================================================
+# GOOGLE PLAY SERVICES & FIREBASE
+# ============================================================================
+-keep class com.google.android.gms.** { *; }
+-keep class com.google.firebase.** { *; }
+-dontwarn com.google.android.gms.**
+-dontwarn com.google.firebase.**
+
+# ============================================================================
+# REFLECTION - KEEP ALL PUBLIC/PROTECTED MEMBERS
+# ============================================================================
+-keep public class * {
+    public protected *;
+}
+
+-keepclassmembers class * {
+    public <methods>;
+    protected <methods>;
+    public <fields>;
+    protected <fields>;
+}
+
+# Keep all constructors
+-keepclassmembers class * {
+    public <init>(...);
+    protected <init>(...);
+}
+
+# Keep all getters and setters
+-keepclassmembers class * {
+    void set*(***);
+    void set*(int, ***);
+    boolean is*();
+    boolean is*(int);
+    *** get*();
+    *** get*(int);
+}
+
+# ============================================================================
+# SECURITY & ENCRYPTION
+# ============================================================================
+-keep class javax.crypto.** { *; }
+-keep class javax.security.** { *; }
+-keep class java.security.** { *; }
+
+# ============================================================================
+# EXCEPTIONS & DEBUGGING
+# ============================================================================
+-keep public class * extends java.lang.Exception { *; }
+-keep public class * extends java.lang.Error { *; }
+-keep public class * extends java.lang.Throwable { *; }
+
+# ============================================================================
+# INTERFACES - KEEP ALL
+# ============================================================================
+-keep interface * { *; }
+
+# ============================================================================
+# SAFE WARNINGS ONLY
+# ============================================================================
+-dontwarn javax.annotation.**
+-dontwarn org.conscrypt.**
+-dontwarn org.bouncycastle.**
+-dontwarn org.openjsse.**
+-dontwarn okhttp3.**
+-dontwarn okio.**
+-dontwarn retrofit2.**
+
+# Google Play Core (if not used)
+-dontwarn com.google.android.play.core.**
 
 # Flutter deferred components (if not used)
 -dontwarn io.flutter.embedding.android.FlutterPlayStoreSplitApplication
--dontwarn io.flutter.embedding.engine.deferredcomponents.PlayStoreDeferredComponentManager
--dontwarn io.flutter.embedding.engine.deferredcomponents.PlayStoreDeferredComponentManager$FeatureInstallStateUpdatedListener
+-dontwarn io.flutter.embedding.engine.deferredcomponents.**
 
-# ========================================
-# IMPORTANT: DO NOT USE -ignorewarnings
-# ========================================
-# Using -ignorewarnings causes R8 to be too aggressive
-# and removes code that the app actually needs.
-# Instead, we use specific -dontwarn rules above.
+# ============================================================================
+# FINAL SAFETY NET - KEEP EVERYTHING ELSE
+# ============================================================================
 
-# End of ProGuard rules
+# Keep all classes in main package
+-keep class * { *; }
+
+# Keep all interfaces
+-keep interface * { *; }
+
+# Keep all public/protected members of all classes
+-keepclassmembers class * {
+    public *;
+    protected *;
+}
+
+# ============================================================================
+# CRITICAL: DO NOT USE -ignorewarnings
+# This was the root cause of previous issues
+# ============================================================================
+
+# ============================================================================
+# END OF ULTRA CONSERVATIVE RULES
+# ============================================================================

@@ -73,16 +73,16 @@ android {
 
     buildTypes {
         release {
-            // ProGuard/R8 DISABLED for full functionality
-            // APK will be larger (~70-80 MB) but everything will work correctly
-            isMinifyEnabled = false
-            isShrinkResources = false
+            // ProGuard/R8 ENABLED with ULTRA CONSERVATIVE rules
+            // Minimal optimization to preserve all functionality
+            isMinifyEnabled = true
+            isShrinkResources = true
             
-            // ProGuard files kept for reference but not used
-            // proguardFiles(
-            //     getDefaultProguardFile("proguard-android-optimize.txt"),
-            //     "proguard-rules.pro"
-            // )
+            // Use ultra-conservative ProGuard rules
+            proguardFiles(
+                getDefaultProguardFile("proguard-android.txt"),
+                "proguard-rules.pro"
+            )
             
             // Use release signing configuration
             signingConfig = signingConfigs.getByName("release")
