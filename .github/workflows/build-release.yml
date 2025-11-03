@@ -1,1 +1,85 @@
+name: Build EchoFort Release APK
 
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Release APK
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.16.9'
+          channel: 'stable'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Create keystore directory
+        run: mkdir -p android/app/keystore
+
+      - name: Decode and save keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/keystore/release.keystore
+          echo "✅ Keystore decoded successfully"
+
+      - name: Create signing.properties file
+        run: |
+          cat > android/app/keystore/signing.properties << EOF
+          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
+          keyPassword=${{ secrets.KEY_PASSWORD }}
+          keyAlias=${{ secrets.KEY_ALIAS }}
+          storeFile=release.keystore
+          EOF
+          echo "✅ Signing properties created"
+
+      - name: Build Release APK with Obfuscation
+        run: |
+          flutter build apk --release --obfuscate --split-debug-info=build/app/outputs/symbols
+          echo "✅ Release APK built successfully"
+
+      - name: Build Release AAB with Obfuscation
+        run: |
+          flutter build appbundle --release --obfuscate --split-debug-info=build/app/outputs/symbols
+          echo "✅ Release AAB built successfully"
+
+      - name: Get APK info
+        run: |
+          echo "📦 APK Information:"
+          ls -lh build/app/outputs/flutter-apk/app-release.apk
+          echo "📦 AAB Information:"
+          ls -lh build/app/outputs/bundle/release/app-release.aab
+
+      - name: Upload Release APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: echofort-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Upload Release AAB
+        uses: actions/upload-artifact@v3
+        with:
+          name: echofort-release-aab
+          path: build/app/outputs/bundle/release/app-release.aab
+
+      - name: Upload Debug Symbols
+        uses: actions/upload-artifact@v3
+        with:
+          name: debug-symbols
+          path: build/app/outputs/symbols/
