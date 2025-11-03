@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'services/auth_service.dart';
+import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -11,6 +13,11 @@ void main() async {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
+  Future<bool> _hasSeenOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('hasSeenOnboarding') ?? false;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,8 +29,12 @@ class MyApp extends StatelessWidget {
         title: 'EchoFort',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          primarySwatch: Colors.blue,
           primaryColor: const Color(0xFF2196F3),
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF2196F3),
+            secondary: const Color(0xFFFFFFFF),
+            brightness: Brightness.light,
+          ),
           scaffoldBackgroundColor: Colors.white,
           appBarTheme: const AppBarTheme(
             elevation: 0,
@@ -36,14 +47,66 @@ class MyApp extends StatelessWidget {
               backgroundColor: const Color(0xFF2196F3),
               foregroundColor: Colors.white,
               elevation: 2,
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           ),
+          textTheme: const TextTheme(
+            headlineLarge: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1A1A1A),
+            ),
+            headlineMedium: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1A1A1A),
+            ),
+            titleLarge: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF1A1A1A),
+            ),
+            bodyLarge: TextStyle(
+              fontSize: 16,
+              color: Color(0xFF4A4A4A),
+            ),
+            bodyMedium: TextStyle(
+              fontSize: 14,
+              color: Color(0xFF6A6A6A),
+            ),
+          ),
+          inputDecorationTheme: InputDecorationTheme(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            filled: true,
+            fillColor: Colors.grey[50],
+          ),
         ),
-        home: Consumer<AuthService>(
-          builder: (context, authService, _) {
-            return authService.isAuthenticated
-                ? const DashboardScreen()
-                : const LoginScreen();
+        home: FutureBuilder<bool>(
+          future: _hasSeenOnboarding(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            }
+            
+            final hasSeenOnboarding = snapshot.data ?? false;
+            
+            return Consumer<AuthService>(
+              builder: (context, authService, _) {
+                if (!hasSeenOnboarding) {
+                  return const OnboardingScreen();
+                }
+                return authService.isAuthenticated
+                    ? const DashboardScreen()
+                    : const LoginScreen();
+              },
+            );
           },
         ),
       ),

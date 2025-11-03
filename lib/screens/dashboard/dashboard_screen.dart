@@ -94,10 +94,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildHomePage(AuthService authService) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('EchoFort'),
+        title: Row(
+          children: [
+            Image.asset('assets/images/logo.png', width: 32, height: 32),
+            const SizedBox(width: 12),
+            const Text('EchoFort'),
+          ],
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications),
+            icon: const Icon(Icons.notifications_outlined),
             onPressed: () {
               // TODO: Navigate to notifications
             },
@@ -112,52 +118,85 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Welcome Card
-              Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+              // Enhanced Welcome Card with Gradient
+              Container(
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF2196F3), Color(0xFFE3F2FD)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.blue.withOpacity(0.3),
+                      blurRadius: 15,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 30,
-                        backgroundColor: Theme.of(context).primaryColor,
-                        child: Text(
-                          authService.userName?.substring(0, 1).toUpperCase() ?? 'U',
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
                             color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Image.asset(
+                            'assets/images/logo.png',
+                            width: 40,
+                            height: 40,
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Welcome back,',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 14,
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Welcome back,',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.white70,
+                                ),
                               ),
-                            ),
-                            Text(
-                              authService.userName ?? 'User',
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
+                              Text(
+                                authService.userName ?? 'User',
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Your family is protected',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildStatBadge('1M+', 'Families\nProtected'),
+                        _buildStatBadge('₹100Cr+', 'Scams\nBlocked'),
+                        _buildStatBadge('99.9%', 'Accuracy'),
+                      ],
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 24),
@@ -166,7 +205,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Card(
                 elevation: 2,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(20.0),
@@ -193,8 +232,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 value: 0.85,
                                 strokeWidth: 12,
                                 backgroundColor: Colors.grey[200],
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Theme.of(context).primaryColor,
+                                valueColor: const AlwaysStoppedAnimation<Color>(
+                                  Color(0xFF2196F3),
                                 ),
                               ),
                             ),
@@ -310,64 +349,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     () => setState(() => _currentIndex = 3),
                   ),
                   _buildQuickAction(
-                    'Lookup Number',
-                    Icons.phone,
-                    Colors.green,
-                    () => setState(() => _currentIndex = 1),
-                  ),
-                  _buildQuickAction(
-                    'GPS Track',
+                    'GPS Tracking',
                     Icons.location_on,
                     Colors.green,
                     () => Navigator.push(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => const GPSTrackingScreen(),
-                      ),
+                      MaterialPageRoute(builder: (_) => const GPSTrackingScreen()),
                     ),
                   ),
                   _buildQuickAction(
-                    'Screen Time',
-                    Icons.timer,
-                    Colors.orange,
-                    () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ScreenTimeScreen(),
-                      ),
-                    ),
-                  ),
-                  _buildQuickAction(
-                    'SOS Alert',
-                    Icons.warning,
-                    Colors.red,
-                    () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const SOSScreen(),
-                      ),
-                    ),
-                  ),
-                  _buildQuickAction(
-                    'Evidence',
+                    'Evidence Vault',
                     Icons.folder_special,
                     Colors.purple,
                     () => Navigator.push(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => const EvidenceVaultScreen(),
-                      ),
+                      MaterialPageRoute(builder: (_) => const EvidenceVaultScreen()),
+                    ),
+                  ),
+                  _buildQuickAction(
+                    'SOS Emergency',
+                    Icons.emergency,
+                    Colors.red,
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SOSScreen()),
                     ),
                   ),
                   _buildQuickAction(
                     'AI Assistant',
-                    Icons.smart_toy,
+                    Icons.psychology,
                     Colors.teal,
                     () => Navigator.push(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => const AIAssistantScreen(),
-                      ),
+                      MaterialPageRoute(builder: (_) => const AIAssistantScreen()),
                     ),
                   ),
                 ],
@@ -376,6 +390,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildStatBadge(String value, String label) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            color: Colors.white70,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 
@@ -388,9 +426,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 28),
+            Icon(icon, color: color, size: 32),
             const SizedBox(height: 8),
             Text(
               value,
@@ -399,12 +437,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
+            const SizedBox(height: 4),
             Text(
               title,
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey[600],
               ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -432,7 +472,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 title,
                 style: const TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
                 ),
                 textAlign: TextAlign.center,
               ),
