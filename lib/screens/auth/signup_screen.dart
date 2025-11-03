@@ -101,17 +101,33 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                     const SizedBox(height: 16),
                     const Text(
-                      'Join EchoFort Today',
+                      'Start Your Free Trial',
                       style: TextStyle(
-                        fontSize: 24,
+                        fontSize: 28,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                       textAlign: TextAlign.center,
                     ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        '24-Hour Money-Back Guarantee',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     const Text(
-                      '24-hour money-back guarantee • Full refund if not satisfied',
+                      'Join 1M+ Families Protected from Scams',
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.white70,

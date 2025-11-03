@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
+import '../caller_id/whitelist_screen.dart';
 
 class CallerIDScreen extends StatefulWidget {
   const CallerIDScreen({super.key});
@@ -160,6 +161,27 @@ class _CallerIDScreenState extends State<CallerIDScreen> {
                       'Lookup Number',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
+            ),
+            const SizedBox(height: 16),
+
+            // Whitelist management button
+            OutlinedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const WhitelistScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.verified_user),
+              label: const Text('Manage Trusted Contacts'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
             const SizedBox(height: 24),
 
