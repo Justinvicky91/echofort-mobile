@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../services/payment_service.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});
@@ -8,49 +10,46 @@ class SubscriptionScreen extends StatefulWidget {
 }
 
 class _SubscriptionScreenState extends State<SubscriptionScreen> {
-  String _currentPlan = 'free';
+  String _currentPlan = 'basic';
+  late PaymentService _paymentService;
+  
   final List<Map<String, dynamic>> _plans = [
-    {
-      'id': 'free',
-      'name': 'Free',
-      'price': 0,
-      'period': 'month',
-      'features': [
-        'Basic caller ID',
-        'SMS scanning (10/day)',
-        'URL checking (5/day)',
-        'Community reports',
-      ],
-      'color': Colors.grey,
-    },
     {
       'id': 'basic',
       'name': 'Basic',
-      'price': 299,
+      'price': 399,
       'period': 'month',
       'features': [
-        'Everything in Free',
-        'Unlimited SMS scanning',
-        'Unlimited URL checking',
-        'Call recording (50/month)',
-        'Email support',
+        'Real-time AI call screening',
+        'Trust Factor scoring (0-10)',
+        'Access to 125,000+ Scam Database',
+        'Voice pattern recognition',
+        'Keyword detection',
+        'Caller ID verification',
+        '24/7 customer support',
+        '24-hour Money-back Guarantee',
       ],
       'color': Colors.blue,
       'popular': false,
     },
     {
-      'id': 'premium',
-      'name': 'Premium',
-      'price': 599,
+      'id': 'personal',
+      'name': 'Personal',
+      'price': 799,
       'period': 'month',
       'features': [
-        'Everything in Basic',
-        'Unlimited call recording',
-        'Family safety (5 members)',
-        'GPS tracking',
-        'Screen time management',
-        'Evidence vault (1GB)',
-        'Priority support',
+        'Everything in Basic Plan',
+        'Auto call recording (ALL calls)',
+        '90 days call storage',
+        'Loan harassment protection',
+        'AI image & screenshot scanning',
+        'QR code scam detection',
+        'WhatsApp/Telegram message analysis',
+        'Email phishing detection',
+        'Legal complaint filing system',
+        'Whisper (Real-time voice analysis)',
+        'Priority customer support',
+        'Offline recording (auto-upload)',
       ],
       'color': Colors.purple,
       'popular': true,
@@ -58,16 +57,22 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     {
       'id': 'family',
       'name': 'Family',
-      'price': 999,
+      'price': 1499,
       'period': 'month',
       'features': [
-        'Everything in Premium',
-        'Up to 10 family members',
-        'Evidence vault (5GB)',
-        'Advanced AI protection',
-        'Real-time call analysis',
-        'Emergency SOS',
-        '24/7 support',
+        'Everything in Personal Plan',
+        'Up to 4 family members/devices',
+        'Selective call recording',
+        '90 days scam call storage',
+        'Real-time GPS family tracking',
+        'Geofencing & safe zone alerts',
+        'Child protection (18+ filter)',
+        'YouTube Restricted Mode',
+        'Screen time tracking & WHO limits',
+        'Automated screen time control',
+        'Gaming addiction alerts',
+        'Family dashboard',
+        'Priority phone support',
       ],
       'color': Colors.orange,
       'popular': false,
@@ -75,16 +80,100 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _paymentService = PaymentService();
+    _paymentService.initialize();
+    
+    _paymentService.onSuccess = (PaymentSuccessResponse response) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            '✅ Payment successful! Your subscription is now active.\n'
+            'You have 24 hours to request a full refund if not satisfied.',
+          ),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 5),
+        ),
+      );
+      // TODO: Navigate to dashboard or update subscription status
+    };
+    
+    _paymentService.onError = (PaymentFailureResponse response) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '❌ Payment failed: ${response.message}\n'
+            'Please try again or contact support.',
+          ),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    };
+  }
+
+  @override
+  void dispose() {
+    _paymentService.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Subscription Plans'),
+        elevation: 0,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 24-hour money-back guarantee banner
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.blue.shade400, Colors.blue.shade600],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.verified_user, color: Colors.white, size: 32),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          '24-Hour Money-Back Guarantee',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Not satisfied? Get a full refund within 24 hours of purchase',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
             // Current plan card
             Card(
               elevation: 2,
@@ -100,186 +189,131 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     const Text(
                       'Current Plan',
                       style: TextStyle(
+                        color: Colors.white,
                         fontSize: 16,
-                        color: Colors.white70,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       _plans.firstWhere((p) => p['id'] == _currentPlan)['name'],
                       style: const TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
                         color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    if (_currentPlan != 'free') ...[
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Renews on Dec 1, 2024',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.white70,
-                        ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '₹${_plans.firstWhere((p) => p['id'] == _currentPlan)['price']}/month',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 16,
                       ),
-                    ],
+                    ),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 24),
 
-            // Plans
+            // Available plans
             const Text(
               'Available Plans',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 4),
+            const Text(
+              'All prices include GST • Pay upfront • 24-hour money-back guarantee',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey,
+              ),
+            ),
+            const SizedBox(height: 16),
 
-            ..._plans.map((plan) {
-              final isCurrentPlan = plan['id'] == _currentPlan;
-              final isPopular = plan['popular'] == true;
+            // Plan cards
+            ..._plans.map((plan) => _buildPlanCard(plan)).toList(),
+          ],
+        ),
+      ),
+    );
+  }
 
-              return Card(
-                elevation: isPopular ? 4 : 2,
-                margin: const EdgeInsets.only(bottom: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: isPopular
-                      ? BorderSide(color: plan['color'], width: 2)
-                      : BorderSide.none,
-                ),
-                child: Stack(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
+  Widget _buildPlanCard(Map<String, dynamic> plan) {
+    final isCurrentPlan = plan['id'] == _currentPlan;
+    final isPopular = plan['popular'] == true;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Stack(
+        children: [
+          Card(
+            elevation: isPopular ? 8 : 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: isPopular
+                  ? BorderSide(color: plan['color'], width: 2)
+                  : BorderSide.none,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Plan name and price
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                plan['name'],
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: plan['color'],
-                                ),
-                              ),
-                              if (isCurrentPlan)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.green,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Text(
-                                    'Active',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                            ],
+                          Text(
+                            plan['name'],
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: plan['color'],
+                            ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 4),
                           Row(
-                            crossAxisAlignment: CrossAxisAlignment.end,
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
                             children: [
                               Text(
                                 '₹${plan['price']}',
                                 style: const TextStyle(
-                                  fontSize: 36,
+                                  fontSize: 32,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                               Text(
                                 '/${plan['period']}',
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 16,
-                                  color: Colors.grey[600],
+                                  color: Colors.grey,
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 16),
-                          ...((plan['features'] as List).map((feature) {
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.check_circle,
-                                    size: 20,
-                                    color: plan['color'],
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      feature,
-                                      style: const TextStyle(fontSize: 14),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }).toList()),
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: isCurrentPlan
-                                  ? null
-                                  : () {
-                                      _showUpgradeDialog(plan);
-                                    },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: plan['color'],
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: Text(
-                                isCurrentPlan ? 'Current Plan' : 'Upgrade',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
                         ],
                       ),
-                    ),
-                    if (isPopular)
-                      Positioned(
-                        top: 0,
-                        right: 0,
-                        child: Container(
+                      if (isCurrentPlan)
+                        Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: plan['color'],
-                            borderRadius: const BorderRadius.only(
-                              topRight: Radius.circular(12),
-                              bottomLeft: Radius.circular(12),
-                            ),
+                            color: Colors.green,
+                            borderRadius: BorderRadius.circular(20),
                           ),
                           child: const Text(
-                            'MOST POPULAR',
+                            'ACTIVE',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 12,
@@ -287,121 +321,145 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                             ),
                           ),
                         ),
-                      ),
-                  ],
-                ),
-              );
-            }).toList(),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
 
-            // Features comparison
-            const SizedBox(height: 24),
-            Card(
-              elevation: 1,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Why Upgrade?',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                  // Features
+                  ...plan['features'].map<Widget>((feature) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.check_circle,
+                            color: plan['color'],
+                            size: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              feature,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  const SizedBox(height: 20),
+
+                  // Subscribe button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: isCurrentPlan
+                          ? null
+                          : () => _processPayment(plan),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: plan['color'],
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: isPopular ? 4 : 2,
+                      ),
+                      child: Text(
+                        isCurrentPlan
+                            ? 'Current Plan'
+                            : 'Subscribe Now - ₹${plan['price']}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    _buildBenefit(
-                      'Unlimited Protection',
-                      'No daily limits on scam detection',
-                      Icons.security,
-                    ),
-                    _buildBenefit(
-                      'Family Safety',
-                      'Protect your entire family',
-                      Icons.family_restroom,
-                    ),
-                    _buildBenefit(
-                      'Evidence Vault',
-                      'Store and manage scam evidence',
-                      Icons.folder_special,
-                    ),
-                    _buildBenefit(
-                      'Priority Support',
-                      '24/7 customer support',
-                      Icons.support_agent,
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBenefit(String title, String description, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              icon,
-              color: Theme.of(context).primaryColor,
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
+          // Popular badge
+          if (isPopular)
+            Positioned(
+              top: 0,
+              right: 20,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
                 ),
-                Text(
-                  description,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.orange.shade400, Colors.orange.shade600],
+                  ),
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(12),
+                    bottomRight: Radius.circular(12),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.orange.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Text(
+                  '⭐ MOST POPULAR',
                   style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
         ],
       ),
     );
   }
 
-  void _showUpgradeDialog(Map<String, dynamic> plan) {
+  void _processPayment(Map<String, dynamic> plan) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Upgrade to ${plan['name']}?'),
+        title: Text('Subscribe to ${plan['name']} Plan'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'You will be charged ₹${plan['price']} per ${plan['period']}.',
+              'Amount: ₹${plan['price']}/month',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 16),
             const Text(
-              'Payment will be processed securely through Razorpay.',
-              style: TextStyle(fontSize: 12),
+              '✅ Pay upfront\n'
+              '✅ 24-hour money-back guarantee\n'
+              '✅ Full refund if not satisfied\n'
+              '✅ Auto-renewal monthly',
+              style: TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: const Text(
+                'You will be charged immediately. If you\'re not satisfied, request a full refund within 24 hours.',
+                style: TextStyle(fontSize: 12, color: Colors.black87),
+              ),
             ),
           ],
         ),
@@ -413,22 +471,31 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              _processPayment(plan);
+              _initiateRazorpayPayment(plan);
             },
-            child: const Text('Continue to Payment'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: plan['color'],
+            ),
+            child: Text('Pay ₹${plan['price']}'),
           ),
         ],
       ),
     );
   }
 
-  void _processPayment(Map<String, dynamic> plan) {
-    // TODO: Integrate with Razorpay payment gateway
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Processing payment for ${plan['name']} plan...'),
-        duration: const Duration(seconds: 2),
-      ),
+  void _initiateRazorpayPayment(Map<String, dynamic> plan) {
+    // TODO: Get user details from auth service
+    const userEmail = 'user@example.com';
+    const userName = 'User Name';
+    const userPhone = '9876543210';
+    
+    _paymentService.startPayment(
+      planId: plan['id'],
+      planName: plan['name'],
+      amount: plan['price'],
+      userEmail: userEmail,
+      userName: userName,
+      userPhone: userPhone,
     );
   }
 }

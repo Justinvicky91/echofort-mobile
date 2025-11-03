@@ -101,7 +101,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                     const SizedBox(height: 16),
                     const Text(
-                      'Start Your Free 7-Day Trial',
+                      'Join EchoFort Today',
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -111,11 +111,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'No credit card required',
+                      '24-hour money-back guarantee • Full refund if not satisfied',
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.white70,
                       ),
+                      textAlign: TextAlign.center,
                     ),
                   ],
                 ),
