@@ -152,3 +152,18 @@
 -keep public class * extends java.lang.Exception
 
 # End of ProGuard rules
+
+# ========================================
+# Fix for Google Play Core missing classes
+# (Flutter embedding references these but app doesn't use deferred components)
+# ========================================
+-dontwarn com.google.android.play.core.**
+-keep class com.google.android.play.core.** { *; }
+
+# Ignore missing Play Core classes for Flutter deferred components
+-dontwarn io.flutter.embedding.android.FlutterPlayStoreSplitApplication
+-dontwarn io.flutter.embedding.engine.deferredcomponents.PlayStoreDeferredComponentManager
+-dontwarn io.flutter.embedding.engine.deferredcomponents.PlayStoreDeferredComponentManager$FeatureInstallStateUpdatedListener
+
+# If Play Core classes are missing, don't fail the build
+-ignorewarnings
