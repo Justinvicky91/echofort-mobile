@@ -73,15 +73,16 @@ android {
 
     buildTypes {
         release {
-            // Enable code shrinking, obfuscation, and optimization
-            isMinifyEnabled = true
-            isShrinkResources = true
+            // ProGuard/R8 DISABLED for full functionality
+            // APK will be larger (~70-80 MB) but everything will work correctly
+            isMinifyEnabled = false
+            isShrinkResources = false
             
-            // ProGuard configuration files
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            // ProGuard files kept for reference but not used
+            // proguardFiles(
+            //     getDefaultProguardFile("proguard-android-optimize.txt"),
+            //     "proguard-rules.pro"
+            // )
             
             // Use release signing configuration
             signingConfig = signingConfigs.getByName("release")
