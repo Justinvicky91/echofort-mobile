@@ -31,7 +31,7 @@ class PaymentService {
     try {
       // Create order on backend
       final orderResponse = await _apiService.post(
-        '/api/payment/create-order',
+        '/api/subscription/create-order',
         {'amount': amount * 100}, // Convert to paise
       );
       
@@ -73,7 +73,7 @@ class PaymentService {
     try {
       // Verify payment on backend
       final verifyResponse = await _apiService.post(
-        '/api/payment/verify',
+        '/api/subscription/verify',
         {
           'razorpay_payment_id': response.paymentId,
           'razorpay_order_id': response.orderId,
