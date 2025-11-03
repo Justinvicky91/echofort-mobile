@@ -10,6 +10,16 @@ workflows:
       vars:
         PACKAGE_NAME: "com.echofort.mobile"
     scripts:
+      - name: Create signing configuration
+        script: |
+          cat > android/app/keystore/signing.properties << EOF
+          storePassword=EchoFort@2025#Secure
+          keyPassword=EchoFort@2025#Secure
+          keyAlias=echofort
+          storeFile=release.keystore
+          EOF
+          echo "✅ Signing properties created"
+      
       - name: Get Flutter packages
         script: |
           flutter packages pub get
