@@ -129,6 +129,23 @@ class ApiService {
     });
   }
   
+  // OTP Authentication APIs
+  Future<Map<String, dynamic>> requestOTP(String email, String username, String phone, String password) async {
+    return await post('/auth/otp/request', {
+      'email': email,
+      'username': username,
+      'phone': phone,
+      'password': password,
+    });
+  }
+  
+  Future<Map<String, dynamic>> verifyOTP(String email, String otp) async {
+    return await post('/auth/otp/verify', {
+      'email': email,
+      'otp': otp,
+    });
+  }
+  
   // Caller ID APIs
   Future<Map<String, dynamic>> lookupNumber(String phoneNumber) async {
     return await post('/api/mobile/caller-id/lookup', {

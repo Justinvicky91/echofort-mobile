@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
+import 'otp_verification_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -36,29 +37,38 @@ class _SignUpScreenState extends State<SignUpScreen> {
     setState(() => _isLoading = true);
 
     final authService = Provider.of<AuthService>(context, listen: false);
-    final success = await authService.register(
-      _usernameController.text.trim(),
+    
+    // NEW: Request OTP instead of direct registration
+    final result = await authService.requestOTP(
       _emailController.text.trim(),
-      _passwordController.text,
+      _usernameController.text.trim(),
       _phoneController.text.trim(),
+      _passwordController.text,
     );
 
     setState(() => _isLoading = false);
 
     if (!mounted) return;
 
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Account created successfully! Please login.'),
-          backgroundColor: Colors.green,
+    if (result['success']) {
+      // Navigate to OTP verification screen
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => OTPVerificationScreen(
+            email: _emailController.text.trim(),
+            signupData: {
+              'email': _emailController.text.trim(),
+              'username': _usernameController.text.trim(),
+              'phone': _phoneController.text.trim(),
+              'password': _passwordController.text,
+            },
+          ),
         ),
       );
-      Navigator.of(context).pop();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Sign up failed. Please try again.'),
+        SnackBar(
+          content: Text(result['message'] ?? 'Sign up failed. Please try again.'),
           backgroundColor: Colors.red,
         ),
       );
