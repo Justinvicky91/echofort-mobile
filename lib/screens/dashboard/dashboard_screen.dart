@@ -96,7 +96,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       appBar: AppBar(
         title: Row(
           children: [
-            Image.asset('assets/images/logo.png', width: 32, height: 32),
+            Image.asset('assets/images/echofort_logo.png', width: 32, height: 32),
             const SizedBox(width: 12),
             const Text('EchoFort'),
           ],
@@ -148,7 +148,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Image.asset(
-                            'assets/images/logo.png',
+                            'assets/images/echofort_logo.png',
                             width: 40,
                             height: 40,
                           ),

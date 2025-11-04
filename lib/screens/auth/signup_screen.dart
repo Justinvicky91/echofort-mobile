@@ -79,7 +79,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                     const SizedBox(height: 16),
                     Image.asset(
-                      'assets/images/logo.png',
+                      'assets/images/echofort_logo.png',
                       width: 80,
                       height: 80,
                     ),

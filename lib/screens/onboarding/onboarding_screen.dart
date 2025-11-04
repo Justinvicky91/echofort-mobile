@@ -77,7 +77,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           children: [
             // Logo
             Image.asset(
-              'assets/images/logo.png',
+              'assets/images/echofort_logo.png',
               width: 120,
               height: 120,
             ),

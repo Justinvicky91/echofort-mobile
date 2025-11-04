@@ -78,7 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     // Logo
                     Image.asset(
-                      'assets/images/logo.png',
+                      'assets/images/echofort_logo.png',
                       width: 120,
                       height: 120,
                     ),
