@@ -113,7 +113,7 @@ class PaymentService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('${_apiService.baseUrl}/api/subscription/upgrade'),
+        Uri.parse('${ApiService.baseUrl}/api/subscription/upgrade'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${await _apiService.getToken()}',
@@ -146,7 +146,7 @@ class PaymentService {
   Future<Map<String, dynamic>> getSubscriptionPlans() async {
     try {
       final response = await http.get(
-        Uri.parse('${_apiService.baseUrl}/api/subscription/plans'),
+        Uri.parse('${ApiService.baseUrl}/api/subscription/plans'),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -167,7 +167,7 @@ class PaymentService {
   Future<Map<String, dynamic>> getSubscriptionStatus() async {
     try {
       final response = await http.get(
-        Uri.parse('${_apiService.baseUrl}/api/subscription/status'),
+        Uri.parse('${ApiService.baseUrl}/api/subscription/status'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${await _apiService.getToken()}',
@@ -189,7 +189,7 @@ class PaymentService {
   Future<Map<String, dynamic>> cancelSubscription() async {
     try {
       final response = await http.post(
-        Uri.parse('${_apiService.baseUrl}/api/subscription/cancel'),
+        Uri.parse('${ApiService.baseUrl}/api/subscription/cancel'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${await _apiService.getToken()}',
@@ -211,7 +211,7 @@ class PaymentService {
   Future<Map<String, dynamic>> requestRefund({required String reason}) async {
     try {
       final response = await http.post(
-        Uri.parse('${_apiService.baseUrl}/api/refund/request'),
+        Uri.parse('${ApiService.baseUrl}/api/refund/request'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${await _apiService.getToken()}',
