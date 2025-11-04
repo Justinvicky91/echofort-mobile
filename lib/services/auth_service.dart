@@ -80,7 +80,9 @@ class AuthService with ChangeNotifier {
         }),
       );
 
-      if (response.statusCode == 200) {
+      debugPrint('Make.com webhook response: ${response.statusCode} - ${response.body}');
+      
+      if (response.statusCode == 200 || response.statusCode == 202) {
         // Store OTP and user data temporarily for verification
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('pending_otp', otp);
@@ -90,12 +92,15 @@ class AuthService with ChangeNotifier {
         await prefs.setString('pending_password', password);
         await prefs.setInt('otp_timestamp', DateTime.now().millisecondsSinceEpoch);
         
+        debugPrint('OTP stored: $otp for email: $email');
+        
         return {
           'success': true,
-          'message': 'OTP sent to $email',
+          'message': 'OTP sent to $email. Please check your inbox.',
           'email_sent': true,
         };
       } else {
+        debugPrint('Make.com webhook failed: ${response.statusCode}');
         throw Exception('Failed to send OTP: ${response.statusCode}');
       }
     } catch (e) {
