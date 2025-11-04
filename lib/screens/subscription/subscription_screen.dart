@@ -82,35 +82,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   @override
   void initState() {
     super.initState();
-    _paymentService = PaymentService();
+    _paymentService = PaymentService(ApiService());
     _paymentService.initialize();
-    
-    _paymentService.onSuccess = (PaymentSuccessResponse response) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            '✅ Payment successful! Your subscription is now active.\n'
-            'You have 24 hours to request a full refund if not satisfied.',
-          ),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 5),
-        ),
-      );
-      // TODO: Navigate to dashboard or update subscription status
-    };
-    
-    _paymentService.onError = (PaymentFailureResponse response) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '❌ Payment failed: ${response.message}\n'
-            'Please try again or contact support.',
-          ),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 5),
-        ),
-      );
-    };
   }
 
   @override
@@ -489,13 +462,37 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     const userName = 'User Name';
     const userPhone = '9876543210';
     
-    _paymentService.startPayment(
+    _paymentService.createPayment(
       planId: plan['id'],
-      planName: plan['name'],
       amount: plan['price'],
-      userEmail: userEmail,
       userName: userName,
+      userEmail: userEmail,
       userPhone: userPhone,
+      onSuccess: (result) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              '✅ Payment successful! Your subscription is now active.\n'
+              'You have 24 hours to request a full refund if not satisfied.',
+            ),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 5),
+          ),
+        );
+        // TODO: Navigate to dashboard or update subscription status
+      },
+      onError: (error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '❌ Payment failed: $error\n'
+              'Please try again or contact support.',
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      },
     );
   }
 }
