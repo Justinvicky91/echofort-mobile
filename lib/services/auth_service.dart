@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'api_service.dart';
 
 class AuthService with ChangeNotifier {
@@ -61,15 +63,41 @@ class AuthService with ChangeNotifier {
     }
   }
   
-  // Request OTP (NEW - Step 1 of signup)
+  // Request OTP (NEW - Step 1 of signup) - Using Make.com webhook
   Future<Map<String, dynamic>> requestOTP(String email, String username, String phone, String password) async {
     try {
-      final response = await _apiService.requestOTP(email, username, phone, password);
-      return {
-        'success': response['ok'] == true,
-        'message': response['message'] ?? 'OTP sent successfully',
-        'email_sent': response['email_sent'] ?? false,
-      };
+      // Generate 6-digit OTP
+      final otp = (100000 + (999999 - 100000) * (DateTime.now().millisecondsSinceEpoch % 1000) / 1000).floor().toString();
+      
+      // Send OTP via Make.com webhook
+      final response = await http.post(
+        Uri.parse('https://hook.eu2.make.com/wkm53kk3yjnw10jpqeudvbpapao0y1yd'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'email': email,
+          'otp': otp,
+          'username': username,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        // Store OTP and user data temporarily for verification
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('pending_otp', otp);
+        await prefs.setString('pending_email', email);
+        await prefs.setString('pending_username', username);
+        await prefs.setString('pending_phone', phone);
+        await prefs.setString('pending_password', password);
+        await prefs.setInt('otp_timestamp', DateTime.now().millisecondsSinceEpoch);
+        
+        return {
+          'success': true,
+          'message': 'OTP sent to $email',
+          'email_sent': true,
+        };
+      } else {
+        throw Exception('Failed to send OTP: ${response.statusCode}');
+      }
     } catch (e) {
       debugPrint('Request OTP error: $e');
       return {
@@ -82,11 +110,48 @@ class AuthService with ChangeNotifier {
   // Verify OTP (NEW - Step 2 of signup)
   Future<Map<String, dynamic>> verifyOTP(String email, String otp) async {
     try {
-      final response = await _apiService.verifyOTP(email, otp);
-      return {
-        'success': response['ok'] == true,
-        'message': response['message'] ?? 'Account created successfully',
-      };
+      final prefs = await SharedPreferences.getInstance();
+      final storedOtp = prefs.getString('pending_otp');
+      final storedEmail = prefs.getString('pending_email');
+      final otpTimestamp = prefs.getInt('otp_timestamp') ?? 0;
+      
+      // Check if OTP is expired (5 minutes)
+      final now = DateTime.now().millisecondsSinceEpoch;
+      if (now - otpTimestamp > 5 * 60 * 1000) {
+        return {
+          'success': false,
+          'message': 'OTP has expired. Please request a new one.',
+        };
+      }
+      
+      // Verify OTP matches
+      if (storedOtp == otp && storedEmail == email) {
+        // Get stored user data
+        final username = prefs.getString('pending_username') ?? '';
+        final phone = prefs.getString('pending_phone') ?? '';
+        final password = prefs.getString('pending_password') ?? '';
+        
+        // Create account via backend
+        final response = await _apiService.register(username, email, password, phone);
+        
+        // Clear pending data
+        await prefs.remove('pending_otp');
+        await prefs.remove('pending_email');
+        await prefs.remove('pending_username');
+        await prefs.remove('pending_phone');
+        await prefs.remove('pending_password');
+        await prefs.remove('otp_timestamp');
+        
+        return {
+          'success': response['ok'] == true,
+          'message': response['message'] ?? 'Account created successfully',
+        };
+      } else {
+        return {
+          'success': false,
+          'message': 'Invalid OTP code. Please try again.',
+        };
+      }
     } catch (e) {
       debugPrint('Verify OTP error: $e');
       return {

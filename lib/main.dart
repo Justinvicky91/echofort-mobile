@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'services/auth_service.dart';
-import 'screens/onboarding/onboarding_screen.dart';
-import 'screens/auth/login_screen.dart';
-import 'screens/dashboard/dashboard_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,11 +10,6 @@ void main() async {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
-  Future<bool> _hasSeenOnboarding() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool('hasSeenOnboarding') ?? false;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -90,29 +82,7 @@ class MyApp extends StatelessWidget {
             fillColor: Colors.grey[50],
           ),
         ),
-        home: FutureBuilder<bool>(
-          future: _hasSeenOnboarding(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
-              );
-            }
-            
-            final hasSeenOnboarding = snapshot.data ?? false;
-            
-            return Consumer<AuthService>(
-              builder: (context, authService, _) {
-                if (!hasSeenOnboarding) {
-                  return const OnboardingScreen();
-                }
-                return authService.isAuthenticated
-                    ? const DashboardScreen()
-                    : const LoginScreen();
-              },
-            );
-          },
-        ),
+        home: const SplashScreen(),
       ),
     );
   }

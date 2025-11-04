@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../utils/constants.dart';
+import '../../utils/country_data.dart';
 import '../../services/auth_service.dart';
+import '../../services/id_verification_service.dart';
 import 'otp_verification_screen.dart';
 
 class AddressIDVerificationScreen extends StatefulWidget {
@@ -24,16 +26,19 @@ class _AddressIDVerificationScreenState
   final _formKey = GlobalKey<FormState>();
   final _streetController = TextEditingController();
   final _cityController = TextEditingController();
-  final _stateController = TextEditingController();
   final _pincodeController = TextEditingController();
   final _idNumberController = TextEditingController();
 
   String _selectedCountry = 'India';
+  String? _selectedState;
   String _selectedIDType = 'Aadhaar';
   File? _idPhoto;
   bool _termsAccepted = false;
   bool _privacyAccepted = false;
   bool _isLoading = false;
+  bool _isVerifyingID = false;
+  Map<String, dynamic>? _idVerificationResult;
+  final IDVerificationService _idVerificationService = IDVerificationService();
 
   final List<String> _countries = ['India', 'USA', 'UK', 'Canada', 'Australia'];
   final List<String> _idTypes = [
@@ -45,10 +50,19 @@ class _AddressIDVerificationScreenState
   ];
 
   @override
+  void initState() {
+    super.initState();
+    // Set initial state based on country
+    final states = CountryData.getStatesForCountry(_selectedCountry);
+    if (states.isNotEmpty) {
+      _selectedState = states.first;
+    }
+  }
+
+  @override
   void dispose() {
     _streetController.dispose();
     _cityController.dispose();
-    _stateController.dispose();
     _pincodeController.dispose();
     _idNumberController.dispose();
     super.dispose();
@@ -67,6 +81,7 @@ class _AddressIDVerificationScreenState
       setState(() {
         _idPhoto = File(image.path);
       });
+      _verifyIDAutomatically();
     }
   }
 
@@ -83,7 +98,50 @@ class _AddressIDVerificationScreenState
       setState(() {
         _idPhoto = File(image.path);
       });
+      _verifyIDAutomatically();
     }
+  }
+
+  Future<void> _verifyIDAutomatically() async {
+    if (_idPhoto == null || _idNumberController.text.trim().isEmpty) {
+      return;
+    }
+
+    setState(() => _isVerifyingID = true);
+
+    final result = await _idVerificationService.verifyID(
+      idType: _selectedIDType,
+      idNumber: _idNumberController.text.trim(),
+      idPhoto: _idPhoto!,
+      country: _selectedCountry,
+    );
+
+    setState(() {
+      _isVerifyingID = false;
+      _idVerificationResult = result;
+    });
+
+    if (!mounted) return;
+
+    // Show verification result
+    final color = result['verified'] ? Colors.green : Colors.red;
+    final icon = result['verified'] ? Icons.check_circle : Icons.error;
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(icon, color: Colors.white),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(result['message']),
+            ),
+          ],
+        ),
+        backgroundColor: color,
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   void _showPhotoOptions() {
@@ -138,12 +196,24 @@ class _AddressIDVerificationScreenState
       return;
     }
 
+    // Validate pincode format
+    if (!CountryData.validatePincode(_selectedCountry, _pincodeController.text.trim())) {
+      final format = CountryData.getPincodeFormat(_selectedCountry);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(format['errorMessage'] as String),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     // Add address and ID data to signup data
     final completeSignupData = {
       ...widget.signupData,
       'street': _streetController.text.trim(),
       'city': _cityController.text.trim(),
-      'state': _stateController.text.trim(),
+      'state': _selectedState ?? '',
       'country': _selectedCountry,
       'pincode': _pincodeController.text.trim(),
       'idType': _selectedIDType,
@@ -329,8 +399,8 @@ class _AddressIDVerificationScreenState
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: TextFormField(
-                              controller: _stateController,
+                            child: DropdownButtonFormField<String>(
+                              value: _selectedState,
                               decoration: InputDecoration(
                                 labelText: 'State',
                                 prefixIcon: const Icon(Icons.map_outlined),
@@ -338,6 +408,18 @@ class _AddressIDVerificationScreenState
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
+                              items: CountryData.getStatesForCountry(_selectedCountry)
+                                  .map((state) {
+                                return DropdownMenuItem(
+                                  value: state,
+                                  child: Text(state),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedState = value;
+                                });
+                              },
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return 'Required';
@@ -373,27 +455,44 @@ class _AddressIDVerificationScreenState
                               onChanged: (value) {
                                 setState(() {
                                   _selectedCountry = value!;
+                                  // Update state dropdown when country changes
+                                  final states = CountryData.getStatesForCountry(_selectedCountry);
+                                  _selectedState = states.isNotEmpty ? states.first : null;
+                                  // Clear pincode when country changes
+                                  _pincodeController.clear();
                                 });
                               },
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: TextFormField(
-                              controller: _pincodeController,
-                              decoration: InputDecoration(
-                                labelText: 'PIN Code',
-                                prefixIcon: const Icon(Icons.pin_drop),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              keyboardType: TextInputType.number,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Required';
-                                }
-                                return null;
+                            child: Builder(
+                              builder: (context) {
+                                final pincodeFormat = CountryData.getPincodeFormat(_selectedCountry);
+                                return TextFormField(
+                                  controller: _pincodeController,
+                                  decoration: InputDecoration(
+                                    labelText: pincodeFormat['label'] as String,
+                                    hintText: pincodeFormat['placeholder'] as String,
+                                    prefixIcon: const Icon(Icons.pin_drop),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  keyboardType: _selectedCountry == 'UK' || _selectedCountry == 'Canada'
+                                      ? TextInputType.text
+                                      : TextInputType.number,
+                                  maxLength: pincodeFormat['maxLength'] as int,
+                                  textCapitalization: _selectedCountry == 'UK' || _selectedCountry == 'Canada'
+                                      ? TextCapitalization.characters
+                                      : TextCapitalization.none,
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Required';
+                                    }
+                                    return null;
+                                  },
+                                );
                               },
                             ),
                           ),
