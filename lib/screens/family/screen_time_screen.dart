@@ -329,8 +329,6 @@ class _ScreenTimeScreenState extends State<ScreenTimeScreen> {
           ),
         ],
       ),
-            ),
-          ),
     );
   }
 }
