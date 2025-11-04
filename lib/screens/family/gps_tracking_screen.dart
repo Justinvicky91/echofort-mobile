@@ -23,32 +23,53 @@ class _GPSTrackingScreenState extends State<GPSTrackingScreen> {
   Future<void> _loadFamilyMembers() async {
     setState(() => _isLoading = true);
     try {
-      // TODO: Call API to get family members and their locations
-      // final members = await _apiService.getFamilyMembers();
+      final response = await _apiService.getFamilyMembers();
+      
+      if (response['members'] != null) {
+        // Get location for each family member
+        List<dynamic> membersWithLocation = [];
+        for (var member in response['members']) {
+          try {
+            final locationResponse = await _apiService.getFamilyMemberLocation(member['user_id']);
+            membersWithLocation.add({
+              'id': member['user_id'],
+              'name': member['name'] ?? 'Unknown',
+              'phone': member['identity'] ?? '',
+              'role': member['role'] ?? 'member',
+              'location': locationResponse['location'],
+              'lastUpdate': locationResponse['last_update'] ?? 'Unknown',
+              'battery': locationResponse['battery'] ?? 0,
+            });
+          } catch (e) {
+            // If location fetch fails, add member without location
+            membersWithLocation.add({
+              'id': member['user_id'],
+              'name': member['name'] ?? 'Unknown',
+              'phone': member['identity'] ?? '',
+              'role': member['role'] ?? 'member',
+              'location': null,
+              'lastUpdate': 'No location data',
+              'battery': 0,
+            });
+          }
+        }
+        
+        setState(() {
+          _familyMembers = membersWithLocation;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _familyMembers = [];
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading family members: $e');
       setState(() {
-        // _familyMembers = members;
-        _familyMembers = [
-          {
-            'id': 1,
-            'name': 'Mom',
-            'phone': '+1234567890',
-            'location': {'lat': 37.7749, 'lng': -122.4194, 'address': 'San Francisco, CA'},
-            'lastUpdate': '2 mins ago',
-            'battery': 85,
-          },
-          {
-            'id': 2,
-            'name': 'Dad',
-            'phone': '+1234567891',
-            'location': {'lat': 37.7849, 'lng': -122.4094, 'address': 'Oakland, CA'},
-            'lastUpdate': '5 mins ago',
-            'battery': 60,
-          },
-        ];
+        _familyMembers = [];
         _isLoading = false;
       });
-    } catch (e) {
-      setState(() => _isLoading = false);
     }
   }
 

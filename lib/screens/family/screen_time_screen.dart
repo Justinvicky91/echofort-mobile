@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/api_service.dart';
 
 class ScreenTimeScreen extends StatefulWidget {
   const ScreenTimeScreen({super.key});
@@ -8,25 +9,58 @@ class ScreenTimeScreen extends StatefulWidget {
 }
 
 class _ScreenTimeScreenState extends State<ScreenTimeScreen> {
+  final ApiService _apiService = ApiService();
   bool _isEnabled = true;
-  final Map<String, int> _dailyLimits = {
-    'Social Media': 60,
-    'Games': 30,
-    'Entertainment': 90,
-    'Education': 180,
-  };
-
-  final Map<String, int> _todayUsage = {
-    'Social Media': 45,
-    'Games': 25,
-    'Entertainment': 60,
-    'Education': 120,
-  };
+  bool _isLoading = true;
+  Map<String, int> _dailyLimits = {};
+  Map<String, int> _todayUsage = {};
+  double _totalHours = 0;
+  
+  @override
+  void initState() {
+    super.initState();
+    _loadScreenTimeData();
+  }
+  
+  Future<void> _loadScreenTimeData() async {
+    setState(() => _isLoading = true);
+    try {
+      final dailyResponse = await _apiService.getDailyScreenTime();
+      
+      if (dailyResponse['apps'] != null) {
+        Map<String, int> usage = {};
+        for (var app in dailyResponse['apps']) {
+          String category = _formatCategory(app['category']);
+          int seconds = app['duration_seconds'] ?? 0;
+          usage[category] = (usage[category] ?? 0) + (seconds ~/ 60); // Convert to minutes
+        }
+        
+        setState(() {
+          _todayUsage = usage;
+          _totalHours = dailyResponse['total_hours'] ?? 0;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _todayUsage = {};
+          _totalHours = 0;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading screen time: $e');
+      setState(() => _isLoading = false);
+    }
+  }
+  
+  String _formatCategory(String category) {
+    return category.split('_').map((word) => word[0].toUpperCase() + word.substring(1)).join(' ');
+  }
 
   @override
   Widget build(BuildContext context) {
-    final totalLimit = _dailyLimits.values.reduce((a, b) => a + b);
-    final totalUsage = _todayUsage.values.reduce((a, b) => a + b);
+    final totalLimit = _dailyLimits.isEmpty ? 360 : _dailyLimits.values.reduce((a, b) => a + b);
+    final totalUsage = _todayUsage.isEmpty ? 0 : _todayUsage.values.reduce((a, b) => a + b);
 
     return Scaffold(
       appBar: AppBar(
@@ -42,7 +76,11 @@ class _ScreenTimeScreenState extends State<ScreenTimeScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      body: SingleChildScrollView(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _loadScreenTimeData,
+              child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -291,6 +329,8 @@ class _ScreenTimeScreenState extends State<ScreenTimeScreen> {
           ),
         ],
       ),
+            ),
+          ),
     );
   }
 }

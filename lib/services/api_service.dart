@@ -146,6 +146,80 @@ class ApiService {
     });
   }
   
+  // GPS Tracking APIs
+  Future<Map<String, dynamic>> saveLocation(double latitude, double longitude, double accuracy) async {
+    return await post('/gps/location', {
+      'latitude': latitude,
+      'longitude': longitude,
+      'accuracy': accuracy,
+    });
+  }
+  
+  Future<Map<String, dynamic>> getLocationHistory({int limit = 100}) async {
+    return await get('/gps/history', queryParams: {'limit': limit.toString()});
+  }
+  
+  Future<Map<String, dynamic>> createGeofence(String name, double latitude, double longitude, int radius) async {
+    return await post('/gps/geofence', {
+      'name': name,
+      'latitude': latitude,
+      'longitude': longitude,
+      'radius': radius,
+    });
+  }
+  
+  // Family APIs
+  Future<Map<String, dynamic>> createFamily(String familyName) async {
+    return await post('/family/create', {
+      'family_name': familyName,
+    });
+  }
+  
+  Future<Map<String, dynamic>> addFamilyMember(String memberPhone, String memberName, String role) async {
+    return await post('/family/add-member', {
+      'member_phone': memberPhone,
+      'member_name': memberName,
+      'role': role,
+    });
+  }
+  
+  Future<Map<String, dynamic>> getFamilyMembers() async {
+    return await get('/family/members');
+  }
+  
+  Future<Map<String, dynamic>> getFamilyMemberLocation(int memberId) async {
+    return await get('/family/member-location/$memberId');
+  }
+  
+  // Screen Time APIs
+  Future<Map<String, dynamic>> logScreenTime(String appName, String category, int durationSeconds, String date) async {
+    return await post('/screentime/log', {
+      'app_name': appName,
+      'category': category,
+      'duration_seconds': durationSeconds,
+      'date': date,
+    });
+  }
+  
+  Future<Map<String, dynamic>> getDailyScreenTime({String? date}) async {
+    return await get('/screentime/daily', queryParams: date != null ? {'date': date} : null);
+  }
+  
+  Future<Map<String, dynamic>> getWeeklyScreenTime() async {
+    return await get('/screentime/weekly');
+  }
+  
+  Future<Map<String, dynamic>> setScreenTimeLimit(String category, int limitMinutes) async {
+    return await post('/screentime/set-limit', {
+      'category': category,
+      'limit_minutes': limitMinutes,
+    });
+  }
+  
+  Future<Map<String, dynamic>> getScreenTimeLimits() async {
+    return await get('/screentime/limits');
+  }
+  
   // Caller ID APIs
   Future<Map<String, dynamic>> lookupNumber(String phoneNumber) async {
     return await post('/api/mobile/caller-id/lookup', {
