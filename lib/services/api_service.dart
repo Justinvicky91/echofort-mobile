@@ -220,6 +220,32 @@ class ApiService {
     return await get('/screentime/limits');
   }
   
+  // Subscription APIs
+  Future<Map<String, dynamic>> getSubscriptionStatus() async {
+    return await get('/subscription/status');
+  }
+  
+  Future<Map<String, dynamic>> upgradeSubscription(String plan, String razorpayPaymentId) async {
+    return await post('/subscription/upgrade', {
+      'plan': plan,
+      'razorpay_payment_id': razorpayPaymentId,
+    });
+  }
+  
+  Future<Map<String, dynamic>> cancelSubscription() async {
+    return await post('/subscription/cancel', {});
+  }
+  
+  Future<Map<String, dynamic>> getSubscriptionPlans() async {
+    return await get('/subscription/plans');
+  }
+  
+  Future<Map<String, dynamic>> requestRefund(String reason) async {
+    return await post('/refund/request', {
+      'reason': reason,
+    });
+  }
+  
   // Caller ID APIs
   Future<Map<String, dynamic>> lookupNumber(String phoneNumber) async {
     return await post('/api/mobile/caller-id/lookup', {
