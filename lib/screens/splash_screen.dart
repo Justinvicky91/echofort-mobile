@@ -142,8 +142,8 @@ class _SplashScreenState extends State<SplashScreen>
                     animation: _glowAnimation,
                     builder: (context, child) {
                       return Container(
-                        width: 200,
-                        height: 200,
+                        width: 280,
+                        height: 280,
                         decoration: BoxDecoration(
                           boxShadow: [
                             BoxShadow(

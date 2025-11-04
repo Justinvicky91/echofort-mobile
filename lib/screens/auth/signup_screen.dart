@@ -4,7 +4,14 @@ import '../../services/auth_service.dart';
 import 'address_id_verification_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({super.key});
+  final String? selectedPlan;
+  final int? planPrice;
+  
+  const SignUpScreen({
+    super.key,
+    this.selectedPlan,
+    this.planPrice,
+  });
 
   @override
   State<SignUpScreen> createState() => _SignUpScreenState();
@@ -43,6 +50,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
             'username': _usernameController.text.trim(),
             'phone': _phoneController.text.trim(),
             'password': _passwordController.text,
+            'selectedPlan': widget.selectedPlan ?? 'monthly',
+            'planPrice': widget.planPrice ?? 499,
           },
         ),
       ),
@@ -78,10 +87,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    Image.asset(
-                      'assets/images/echofort_logo.png',
-                      width: 80,
-                      height: 80,
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.95),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.15),
+                            blurRadius: 15,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Image.asset(
+                        'assets/images/echofort_logo.png',
+                        width: 120,
+                        height: 120,
+                        fit: BoxFit.contain,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     const Text(

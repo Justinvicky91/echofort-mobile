@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 import '../dashboard/dashboard_screen.dart';
-import 'signup_screen.dart';
+import 'pricing_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -76,11 +76,26 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Logo
-                    Image.asset(
-                      'assets/images/echofort_logo.png',
-                      width: 120,
-                      height: 120,
+                    // Logo with transparent background
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 20,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Image.asset(
+                        'assets/images/echofort_logo.png',
+                        width: 180,
+                        height: 180,
+                        fit: BoxFit.contain,
+                      ),
                     ),
                     const SizedBox(height: 24),
                     
@@ -221,7 +236,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         TextButton(
                           onPressed: () {
                             Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => const SignUpScreen()),
+                              MaterialPageRoute(builder: (_) => const PricingScreen()),
                             );
                           },
                           child: const Text(

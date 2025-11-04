@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../utils/constants.dart';
 import '../../utils/country_data.dart';
 import '../../services/auth_service.dart';
@@ -66,6 +67,19 @@ class _AddressIDVerificationScreenState
     _pincodeController.dispose();
     _idNumberController.dispose();
     super.dispose();
+  }
+
+  Future<void> _launchURL(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not open $url')),
+        );
+      }
+    }
   }
 
   Future<void> _pickIDPhoto() async {
@@ -641,9 +655,27 @@ class _AddressIDVerificationScreenState
                         },
                         controlAffinity: ListTileControlAffinity.leading,
                         contentPadding: EdgeInsets.zero,
-                        title: const Text(
-                          'I agree to the Terms and Conditions',
-                          style: TextStyle(fontSize: 14),
+                        title: GestureDetector(
+                          onTap: () {
+                            // Open Terms and Conditions URL
+                            _launchURL('https://echofort.ai/terms');
+                          },
+                          child: const Text.rich(
+                            TextSpan(
+                              text: 'I agree to the ',
+                              style: TextStyle(fontSize: 14),
+                              children: [
+                                TextSpan(
+                                  text: 'Terms and Conditions',
+                                  style: TextStyle(
+                                    color: Color(0xFF2196F3),
+                                    decoration: TextDecoration.underline,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
 
@@ -656,9 +688,27 @@ class _AddressIDVerificationScreenState
                         },
                         controlAffinity: ListTileControlAffinity.leading,
                         contentPadding: EdgeInsets.zero,
-                        title: const Text(
-                          'I agree to the Privacy Policy',
-                          style: TextStyle(fontSize: 14),
+                        title: GestureDetector(
+                          onTap: () {
+                            // Open Privacy Policy URL
+                            _launchURL('https://echofort.ai/privacy');
+                          },
+                          child: const Text.rich(
+                            TextSpan(
+                              text: 'I agree to the ',
+                              style: TextStyle(fontSize: 14),
+                              children: [
+                                TextSpan(
+                                  text: 'Privacy Policy',
+                                  style: TextStyle(
+                                    color: Color(0xFF2196F3),
+                                    decoration: TextDecoration.underline,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
 
