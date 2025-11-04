@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
-import 'otp_verification_screen.dart';
+import 'address_id_verification_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -34,45 +34,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Future<void> _handleSignUp() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
-
-    final authService = Provider.of<AuthService>(context, listen: false);
-    
-    // NEW: Request OTP instead of direct registration
-    final result = await authService.requestOTP(
-      _emailController.text.trim(),
-      _usernameController.text.trim(),
-      _phoneController.text.trim(),
-      _passwordController.text,
+    // Navigate to Address & ID Verification screen (Step 2)
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => AddressIDVerificationScreen(
+          signupData: {
+            'email': _emailController.text.trim(),
+            'username': _usernameController.text.trim(),
+            'phone': _phoneController.text.trim(),
+            'password': _passwordController.text,
+          },
+        ),
+      ),
     );
-
-    setState(() => _isLoading = false);
-
-    if (!mounted) return;
-
-    if (result['success']) {
-      // Navigate to OTP verification screen
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => OTPVerificationScreen(
-            email: _emailController.text.trim(),
-            signupData: {
-              'email': _emailController.text.trim(),
-              'username': _usernameController.text.trim(),
-              'phone': _phoneController.text.trim(),
-              'password': _passwordController.text,
-            },
-          ),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result['message'] ?? 'Sign up failed. Please try again.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
   }
 
   @override

@@ -52,6 +52,7 @@ dependencies:
   
   # UI Components
   fl_chart: ^0.66.2
+  image_picker: ^1.0.7
   
   # Utils
   intl: ^0.19.0
