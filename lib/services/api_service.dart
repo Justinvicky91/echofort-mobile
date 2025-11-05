@@ -1,374 +1,459 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+/// Comprehensive API Service for EchoFort Mobile App
+/// Handles all backend API communication with authentication
 class ApiService {
+  // Base URL - Update based on environment
   static const String baseUrl = 'https://api.echofort.ai';
-  final storage = const FlutterSecureStorage();
   
-  // Get auth token
-  Future<String?> getToken() async {
-    return await storage.read(key: 'auth_token');
+  // Token management
+  static String? _authToken;
+  static String? _userId;
+  
+  /// Initialize API service and load saved token
+  static Future<void> init() async {
+    final prefs = await SharedPreferences.getInstance();
+    _authToken = prefs.getString('auth_token');
+    _userId = prefs.getString('user_id');
   }
   
-  // Save auth token
-  Future<void> saveToken(String token) async {
-    await storage.write(key: 'auth_token', value: token);
+  /// Save authentication token
+  static Future<void> saveToken(String token, String userId) async {
+    _authToken = token;
+    _userId = userId;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('auth_token', token);
+    await prefs.setString('user_id', userId);
   }
   
-  // Clear auth token
-  Future<void> clearToken() async {
-    await storage.delete(key: 'auth_token');
+  /// Clear authentication token (logout)
+  static Future<void> clearToken() async {
+    _authToken = null;
+    _userId = null;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('auth_token');
+    await prefs.remove('user_id');
   }
   
-  // Get headers with auth token
-  Future<Map<String, String>> getHeaders() async {
-    final token = await getToken();
-    return {
+  /// Check if user is authenticated
+  static bool get isAuthenticated => _authToken != null;
+  
+  /// Get current user ID
+  static String? get userId => _userId;
+  
+  /// Get headers with authentication
+  static Map<String, String> _getHeaders({bool includeAuth = true}) {
+    final headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      if (token != null) 'Authorization': 'Bearer $token',
     };
-  }
-  
-  // POST request
-  Future<Map<String, dynamic>> post(String endpoint, Map<String, dynamic> body) async {
-    try {
-      final headers = await getHeaders();
-      final response = await http.post(
-        Uri.parse('$baseUrl$endpoint'),
-        headers: headers,
-        body: jsonEncode(body),
-      );
-      
-      return _handleResponse(response);
-    } catch (e) {
-      throw Exception('Network error: $e');
-    }
-  }
-  
-  // GET request
-  Future<Map<String, dynamic>> get(String endpoint, {Map<String, String>? queryParams}) async {
-    try {
-      final headers = await getHeaders();
-      var uri = Uri.parse('$baseUrl$endpoint');
-      if (queryParams != null) {
-        uri = uri.replace(queryParameters: queryParams);
-      }
-      
-      final response = await http.get(uri, headers: headers);
-      return _handleResponse(response);
-    } catch (e) {
-      throw Exception('Network error: $e');
-    }
-  }
-  
-  // PUT request
-  Future<Map<String, dynamic>> put(String endpoint, Map<String, dynamic> body) async {
-    try {
-      final headers = await getHeaders();
-      final response = await http.put(
-        Uri.parse('$baseUrl$endpoint'),
-        headers: headers,
-        body: jsonEncode(body),
-      );
-      
-      return _handleResponse(response);
-    } catch (e) {
-      throw Exception('Network error: $e');
-    }
-  }
-  
-  // DELETE request
-  Future<Map<String, dynamic>> delete(String endpoint) async {
-    try {
-      final headers = await getHeaders();
-      final response = await http.delete(
-        Uri.parse('$baseUrl$endpoint'),
-        headers: headers,
-      );
-      
-      return _handleResponse(response);
-    } catch (e) {
-      throw Exception('Network error: $e');
-    }
-  }
-  
-  // Handle API response
-  Map<String, dynamic> _handleResponse(http.Response response) {
-    final data = jsonDecode(response.body);
     
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return data;
-    } else {
-      throw Exception(data['error'] ?? 'API error: ${response.statusCode}');
+    if (includeAuth && _authToken != null) {
+      headers['Authorization'] = 'Bearer $_authToken';
+    }
+    
+    return headers;
+  }
+  
+  /// Generic GET request
+  static Future<dynamic> get(String endpoint, {bool requiresAuth = true}) async {
+    try {
+      final url = Uri.parse('$baseUrl$endpoint');
+      final response = await http.get(
+        url,
+        headers: _getHeaders(includeAuth: requiresAuth),
+      ).timeout(const Duration(seconds: 30));
+      
+      return _handleResponse(response);
+    } catch (e) {
+      throw _handleError(e);
     }
   }
   
-  // Authentication APIs
-  Future<Map<String, dynamic>> login(String username, String password) async {
-    return await post('/api/auth/login', {
-      'username': username,
-      'password': password,
-    });
+  /// Generic POST request
+  static Future<dynamic> post(
+    String endpoint,
+    Map<String, dynamic> body, {
+    bool requiresAuth = true,
+  }) async {
+    try {
+      final url = Uri.parse('$baseUrl$endpoint');
+      final response = await http.post(
+        url,
+        headers: _getHeaders(includeAuth: requiresAuth),
+        body: jsonEncode(body),
+      ).timeout(const Duration(seconds: 30));
+      
+      return _handleResponse(response);
+    } catch (e) {
+      throw _handleError(e);
+    }
   }
   
-  Future<Map<String, dynamic>> register(String username, String email, String password, String phone) async {
-    return await post('/api/auth/register', {
-      'username': username,
-      'email': email,
-      'password': password,
-      'phone': phone,
-    });
+  /// Generic PUT request
+  static Future<dynamic> put(
+    String endpoint,
+    Map<String, dynamic> body, {
+    bool requiresAuth = true,
+  }) async {
+    try {
+      final url = Uri.parse('$baseUrl$endpoint');
+      final response = await http.put(
+        url,
+        headers: _getHeaders(includeAuth: requiresAuth),
+        body: jsonEncode(body),
+      ).timeout(const Duration(seconds: 30));
+      
+      return _handleResponse(response);
+    } catch (e) {
+      throw _handleError(e);
+    }
   }
   
-  Future<Map<String, dynamic>> verify2FA(int userId, String code) async {
-    return await post('/api/auth/verify-2fa', {
-      'userId': userId,
-      'code': code,
-    });
+  /// Generic DELETE request
+  static Future<dynamic> delete(String endpoint, {bool requiresAuth = true}) async {
+    try {
+      final url = Uri.parse('$baseUrl$endpoint');
+      final response = await http.delete(
+        url,
+        headers: _getHeaders(includeAuth: requiresAuth),
+      ).timeout(const Duration(seconds: 30));
+      
+      return _handleResponse(response);
+    } catch (e) {
+      throw _handleError(e);
+    }
   }
   
-  // OTP Authentication APIs
-  Future<Map<String, dynamic>> requestOTP(String email, String username, String phone, String password) async {
-    return await post('/auth/otp/request', {
-      'email': email,
-      'username': username,
-      'phone': phone,
-      'password': password,
-    });
+  /// Handle HTTP response
+  static dynamic _handleResponse(http.Response response) {
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      if (response.body.isEmpty) return {};
+      return jsonDecode(response.body);
+    } else if (response.statusCode == 401) {
+      // Unauthorized - clear token
+      clearToken();
+      throw ApiException('Session expired. Please login again.', 401);
+    } else if (response.statusCode == 403) {
+      throw ApiException('Access forbidden', 403);
+    } else if (response.statusCode == 404) {
+      throw ApiException('Resource not found', 404);
+    } else if (response.statusCode == 422) {
+      // Validation error
+      final body = jsonDecode(response.body);
+      final message = body['detail'] ?? 'Validation error';
+      throw ApiException(message.toString(), 422);
+    } else if (response.statusCode >= 500) {
+      throw ApiException('Server error. Please try again later.', response.statusCode);
+    } else {
+      final body = jsonDecode(response.body);
+      final message = body['message'] ?? body['detail'] ?? 'Request failed';
+      throw ApiException(message.toString(), response.statusCode);
+    }
   }
   
-  Future<Map<String, dynamic>> verifyOTP(String email, String otp) async {
-    return await post('/auth/otp/verify', {
-      'email': email,
-      'otp': otp,
-    });
+  /// Handle errors
+  static String _handleError(dynamic error) {
+    if (error is ApiException) {
+      return error.message;
+    } else if (error.toString().contains('SocketException')) {
+      return 'No internet connection';
+    } else if (error.toString().contains('TimeoutException')) {
+      return 'Request timeout. Please try again.';
+    } else {
+      return 'An error occurred: ${error.toString()}';
+    }
   }
   
-  // GPS Tracking APIs
-  Future<Map<String, dynamic>> saveLocation(double latitude, double longitude, double accuracy) async {
-    return await post('/gps/location', {
-      'latitude': latitude,
-      'longitude': longitude,
-      'accuracy': accuracy,
-    });
+  // ============================================================================
+  // AUTHENTICATION APIs
+  // ============================================================================
+  
+  /// Request OTP for login
+  static Future<Map<String, dynamic>> requestOTP(String email) async {
+    return await post('/auth/otp/request', {'email': email}, requiresAuth: false);
   }
   
-  Future<Map<String, dynamic>> getLocationHistory({int limit = 100}) async {
-    return await get('/gps/history', queryParams: {'limit': limit.toString()});
+  /// Verify OTP and login
+  static Future<Map<String, dynamic>> verifyOTP({
+    required String email,
+    required String otp,
+    required String deviceId,
+    String deviceName = 'Mobile Device',
+    String name = 'User',
+  }) async {
+    final response = await post(
+      '/auth/otp/verify',
+      {
+        'email': email,
+        'otp': otp,
+        'device_id': deviceId,
+        'device_name': deviceName,
+        'name': name,
+      },
+      requiresAuth: false,
+    );
+    
+    // Save token
+    if (response['token'] != null && response['user_id'] != null) {
+      await saveToken(response['token'], response['user_id'].toString());
+    }
+    
+    return response;
   }
   
-  Future<Map<String, dynamic>> createGeofence(String name, double latitude, double longitude, int radius) async {
-    return await post('/gps/geofence', {
-      'name': name,
-      'latitude': latitude,
-      'longitude': longitude,
-      'radius': radius,
-    });
+  /// Register new user
+  static Future<Map<String, dynamic>> register({
+    required String email,
+    required String password,
+    required String fullName,
+    String? phone,
+    String? address,
+    String? city,
+    String? state,
+    String? country,
+    String? pincode,
+    String? idType,
+    String? idNumber,
+  }) async {
+    final response = await post(
+      '/api/auth/register',
+      {
+        'email': email,
+        'password': password,
+        'full_name': fullName,
+        if (phone != null) 'phone': phone,
+        if (address != null) 'address': address,
+        if (city != null) 'city': city,
+        if (state != null) 'state': state,
+        if (country != null) 'country': country,
+        if (pincode != null) 'pincode': pincode,
+        if (idType != null) 'id_type': idType,
+        if (idNumber != null) 'id_number': idNumber,
+      },
+      requiresAuth: false,
+    );
+    
+    // Save token
+    if (response['token'] != null && response['userId'] != null) {
+      await saveToken(response['token'], response['userId'].toString());
+    }
+    
+    return response;
   }
   
-  // Family APIs
-  Future<Map<String, dynamic>> createFamily(String familyName) async {
-    return await post('/family/create', {
-      'family_name': familyName,
-    });
+  /// Login with email and password
+  static Future<Map<String, dynamic>> login(String email, String password) async {
+    final response = await post(
+      '/api/auth/login',
+      {'email': email, 'password': password},
+      requiresAuth: false,
+    );
+    
+    // Save token
+    if (response['token'] != null && response['userId'] != null) {
+      await saveToken(response['token'], response['userId'].toString());
+    }
+    
+    return response;
   }
   
-  Future<Map<String, dynamic>> addFamilyMember(String memberPhone, String memberName, String role) async {
-    return await post('/family/add-member', {
-      'member_phone': memberPhone,
-      'member_name': memberName,
-      'role': role,
-    });
-  }
+  // ============================================================================
+  // RAZORPAY PAYMENT APIs
+  // ============================================================================
   
-  Future<Map<String, dynamic>> getFamilyMembers() async {
-    return await get('/family/members');
-  }
-  
-  Future<Map<String, dynamic>> getFamilyMemberLocation(int memberId) async {
-    return await get('/family/member-location/$memberId');
-  }
-  
-  // Screen Time APIs
-  Future<Map<String, dynamic>> logScreenTime(String appName, String category, int durationSeconds, String date) async {
-    return await post('/screentime/log', {
-      'app_name': appName,
-      'category': category,
-      'duration_seconds': durationSeconds,
-      'date': date,
-    });
-  }
-  
-  Future<Map<String, dynamic>> getDailyScreenTime({String? date}) async {
-    return await get('/screentime/daily', queryParams: date != null ? {'date': date} : null);
-  }
-  
-  Future<Map<String, dynamic>> getWeeklyScreenTime() async {
-    return await get('/screentime/weekly');
-  }
-  
-  Future<Map<String, dynamic>> setScreenTimeLimit(String category, int limitMinutes) async {
-    return await post('/screentime/set-limit', {
-      'category': category,
-      'limit_minutes': limitMinutes,
-    });
-  }
-  
-  Future<Map<String, dynamic>> getScreenTimeLimits() async {
-    return await get('/screentime/limits');
-  }
-  
-  // Subscription APIs
-  Future<Map<String, dynamic>> getSubscriptionStatus() async {
-    return await get('/subscription/status');
-  }
-  
-  Future<Map<String, dynamic>> upgradeSubscription(String plan, String razorpayPaymentId) async {
-    return await post('/subscription/upgrade', {
+  /// Create Razorpay order
+  static Future<Map<String, dynamic>> createRazorpayOrder({
+    required String plan,
+    bool isTrial = true,
+  }) async {
+    return await post('/api/razorpay/create-order', {
       'plan': plan,
-      'razorpay_payment_id': razorpayPaymentId,
+      'is_trial': isTrial,
     });
   }
   
-  Future<Map<String, dynamic>> cancelSubscription() async {
-    return await post('/subscription/cancel', {});
-  }
-  
-  Future<Map<String, dynamic>> getSubscriptionPlans() async {
-    return await get('/subscription/plans');
-  }
-  
-  Future<Map<String, dynamic>> requestRefund(String reason) async {
-    return await post('/refund/request', {
-      'reason': reason,
+  /// Verify Razorpay payment
+  static Future<Map<String, dynamic>> verifyRazorpayPayment({
+    required String orderId,
+    required String paymentId,
+    required String signature,
+    required String plan,
+    bool isTrial = true,
+  }) async {
+    return await post('/api/razorpay/verify-payment', {
+      'razorpay_order_id': orderId,
+      'razorpay_payment_id': paymentId,
+      'razorpay_signature': signature,
+      'plan': plan,
+      'is_trial': isTrial,
     });
   }
   
-  // Caller ID APIs
-  Future<Map<String, dynamic>> lookupNumber(String phoneNumber) async {
-    return await post('/api/mobile/caller-id/lookup', {
-      'phoneNumber': phoneNumber,
+  /// Get subscription status
+  static Future<Map<String, dynamic>> getSubscriptionStatus() async {
+    return await get('/api/razorpay/subscription-status');
+  }
+  
+  /// Cancel subscription
+  static Future<Map<String, dynamic>> cancelSubscription() async {
+    return await post('/api/razorpay/cancel-subscription', {});
+  }
+  
+  // ============================================================================
+  // REFUND APIs
+  // ============================================================================
+  
+  /// Check refund eligibility
+  static Future<Map<String, dynamic>> checkRefundEligibility() async {
+    return await get('/api/billing/refund/check-eligibility');
+  }
+  
+  /// Request refund
+  static Future<Map<String, dynamic>> requestRefund(String reason) async {
+    return await post('/api/billing/refund/request', {'reason': reason});
+  }
+  
+  /// Get refund status
+  static Future<Map<String, dynamic>> getRefundStatus() async {
+    return await get('/api/billing/refund/status');
+  }
+  
+  // ============================================================================
+  // CALLER ID APIs
+  // ============================================================================
+  
+  /// Check phone number for scam
+  static Future<Map<String, dynamic>> checkCallerID(String phoneNumber) async {
+    return await post('/api/mobile/caller-id/check', {'phone_number': phoneNumber});
+  }
+  
+  /// Get recent scam calls
+  static Future<List<dynamic>> getRecentScamCalls() async {
+    final response = await get('/api/mobile/caller-id/recent');
+    return response['calls'] ?? [];
+  }
+  
+  // ============================================================================
+  // SMS SCANNER APIs
+  // ============================================================================
+  
+  /// Scan messages for scams
+  static Future<Map<String, dynamic>> scanMessages() async {
+    return await post('/api/mobile/sms/scan', {});
+  }
+  
+  /// Get scam messages list
+  static Future<Map<String, dynamic>> getScamMessages() async {
+    return await get('/api/mobile/sms/scam-list');
+  }
+  
+  // ============================================================================
+  // URL CHECKER APIs
+  // ============================================================================
+  
+  /// Check URL for phishing
+  static Future<Map<String, dynamic>> checkURL(String url) async {
+    return await post('/api/mobile/url/check', {'url': url});
+  }
+  
+  // ============================================================================
+  // GPS TRACKING APIs
+  // ============================================================================
+  
+  /// Update location
+  static Future<Map<String, dynamic>> updateLocation({
+    required double latitude,
+    required double longitude,
+  }) async {
+    return await post('/api/gps/update', {
+      'latitude': latitude,
+      'longitude': longitude,
     });
   }
   
-  Future<Map<String, dynamic>> reportSpam(String phoneNumber, String category, String description) async {
-    return await post('/api/mobile/caller-id/report-spam', {
-      'phoneNumber': phoneNumber,
-      'category': category,
-      'description': description,
+  /// Get family locations
+  static Future<List<dynamic>> getFamilyLocations() async {
+    final response = await get('/api/gps/family');
+    return response['locations'] ?? [];
+  }
+  
+  // ============================================================================
+  // SCREEN TIME APIs
+  // ============================================================================
+  
+  /// Get screen time stats
+  static Future<Map<String, dynamic>> getScreenTimeStats() async {
+    return await get('/api/screentime/stats');
+  }
+  
+  /// Update app usage
+  static Future<Map<String, dynamic>> updateAppUsage({
+    required String appName,
+    required int duration,
+  }) async {
+    return await post('/api/screentime/update', {
+      'app_name': appName,
+      'duration': duration,
     });
   }
   
-  Future<Map<String, dynamic>> blockNumber(String phoneNumber, String reason) async {
-    return await post('/api/mobile/caller-id/block-number', {
-      'phoneNumber': phoneNumber,
-      'reason': reason,
-    });
+  // ============================================================================
+  // FAMILY MEMBERS APIs
+  // ============================================================================
+  
+  /// Get family members list
+  static Future<List<dynamic>> getFamilyMembers() async {
+    final response = await get('/api/family/members');
+    return response['members'] ?? [];
   }
   
-  Future<Map<String, dynamic>> getBlockedNumbers() async {
-    return await get('/api/mobile/caller-id/blocked-numbers');
-  }
-  
-  Future<Map<String, dynamic>> getCallerIdStats() async {
-    return await get('/api/mobile/caller-id/statistics');
-  }
-  
-  // SMS Detection APIs
-  Future<Map<String, dynamic>> scanSMS(String sender, String message, String language) async {
-    return await post('/api/mobile/sms/scan', {
-      'sender': sender,
-      'message': message,
-      'language': language,
-    });
-  }
-  
-  Future<Map<String, dynamic>> getSMSThreats({int limit = 20}) async {
-    return await get('/api/mobile/sms/threats', queryParams: {'limit': limit.toString()});
-  }
-  
-  // URL Checker APIs
-  Future<Map<String, dynamic>> checkURL(String url) async {
-    return await post('/api/mobile/url-checker/check-url', {
-      'url': url,
-    });
-  }
-  
-  Future<Map<String, dynamic>> checkEmail(String email) async {
-    return await post('/api/mobile/url-checker/check-email', {
+  /// Add family member
+  static Future<Map<String, dynamic>> addFamilyMember({
+    required String name,
+    required String email,
+    required String relation,
+  }) async {
+    return await post('/api/family/add', {
+      'name': name,
       'email': email,
+      'relation': relation,
     });
   }
   
-  // User Profile APIs
-  Future<Map<String, dynamic>> getProfile() async {
-    return await get('/api/mobile/profile');
+  // ============================================================================
+  // EVIDENCE VAULT APIs
+  // ============================================================================
+  
+  /// Get evidence list
+  static Future<List<dynamic>> getEvidenceList() async {
+    final response = await get('/api/vault/list');
+    return response['evidence'] ?? [];
   }
   
-  Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> data) async {
-    return await put('/api/mobile/profile', data);
-  }
-  
-  Future<Map<String, dynamic>> getAppPreferences() async {
-    return await get('/api/mobile/profile/app-preferences');
-  }
-  
-  Future<Map<String, dynamic>> updateAppPreferences(Map<String, dynamic> preferences) async {
-    return await put('/api/mobile/profile/app-preferences', preferences);
-  }
-  
-  // Emergency APIs
-  Future<Map<String, dynamic>> getEmergencyContacts() async {
-    return await get('/api/mobile/emergency/contacts');
-  }
-  
-  Future<Map<String, dynamic>> addEmergencyContact(Map<String, dynamic> contact) async {
-    return await post('/api/mobile/emergency/contacts', contact);
-  }
-  
-  Future<Map<String, dynamic>> triggerSOS(Map<String, dynamic> alertData) async {
-    return await post('/api/mobile/emergency/alert', alertData);
-  }
-  
-  // Push Notifications APIs
-  Future<Map<String, dynamic>> registerDeviceToken(String deviceToken, String platform) async {
-    return await post('/api/mobile/notifications/register-token', {
-      'deviceToken': deviceToken,
-      'platform': platform,
-      'deviceModel': 'Unknown',
-      'osVersion': 'Unknown',
-      'appVersion': '1.0.0',
+  /// Upload evidence
+  static Future<Map<String, dynamic>> uploadEvidence({
+    required String title,
+    required String type,
+    required String content,
+  }) async {
+    return await post('/api/vault/upload', {
+      'title': title,
+      'type': type,
+      'content': content,
     });
   }
+}
+
+/// Custom exception for API errors
+class ApiException implements Exception {
+  final String message;
+  final int statusCode;
   
-  Future<Map<String, dynamic>> getNotificationHistory({int limit = 50}) async {
-    return await get('/api/mobile/notifications/history', queryParams: {'limit': limit.toString()});
-  }
+  ApiException(this.message, this.statusCode);
   
-  // Real-Time Call APIs
-  Future<Map<String, dynamic>> startCallSession(String phoneNumber, String callerName, String callDirection) async {
-    return await post('/api/mobile/realtime-call/start', {
-      'phoneNumber': phoneNumber,
-      'callerName': callerName,
-      'callDirection': callDirection,
-    });
-  }
-  
-  Future<Map<String, dynamic>> addTranscription(int sessionId, String speaker, String text, String language) async {
-    return await post('/api/mobile/realtime-call/transcription', {
-      'sessionId': sessionId,
-      'speaker': speaker,
-      'text': text,
-      'language': language,
-    });
-  }
-  
-  Future<Map<String, dynamic>> endCallSession(int sessionId, int callDurationSeconds) async {
-    return await post('/api/mobile/realtime-call/end', {
-      'sessionId': sessionId,
-      'callDurationSeconds': callDurationSeconds,
-    });
-  }
+  @override
+  String toString() => message;
 }
