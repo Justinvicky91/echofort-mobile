@@ -63,40 +63,36 @@ class AuthService with ChangeNotifier {
     }
   }
   
-  // Request OTP (NEW - Step 1 of signup) - Using Make.com webhook
+  // Request OTP (NEW - Step 1 of signup) - Using backend API
   Future<Map<String, dynamic>> requestOTP(String email, String username, String phone, String password) async {
     try {
-      // Generate 6-digit OTP
-      final otp = (100000 + (999999 - 100000) * (DateTime.now().millisecondsSinceEpoch % 1000) / 1000).floor().toString();
-      
-      // Send OTP via Make.com webhook
+      // Request OTP from backend API (uses SendGrid)
       final response = await http.post(
-        Uri.parse('https://hook.eu2.make.com/wkm53kk3yjnw10jpqeudvbpapao0y1yd'),
+        Uri.parse('https://api.echofort.ai/auth/otp/request'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'email': email,
-          'otp': otp,
-          'username': username,
         }),
       );
 
-      debugPrint('Make.com webhook response: ${response.statusCode} - ${response.body}');
+      debugPrint('Backend OTP API response: ${response.statusCode} - ${response.body}');
       
-      if (response.statusCode == 200 || response.statusCode == 202) {
-        // Store OTP and user data temporarily for verification
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        
+        // Store user data temporarily for verification
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('pending_otp', otp);
         await prefs.setString('pending_email', email);
         await prefs.setString('pending_username', username);
         await prefs.setString('pending_phone', phone);
         await prefs.setString('pending_password', password);
         await prefs.setInt('otp_timestamp', DateTime.now().millisecondsSinceEpoch);
         
-        debugPrint('OTP stored: $otp for email: $email');
+        debugPrint('OTP requested for email: $email');
         
         return {
           'success': true,
-          'message': 'OTP sent to $email. Please check your inbox.',
+          'message': data['message'] ?? 'OTP sent to $email. Please check your inbox.',
           'email_sent': true,
         };
       } else {
@@ -112,46 +108,47 @@ class AuthService with ChangeNotifier {
     }
   }
   
-  // Verify OTP (NEW - Step 2 of signup)
+  // Verify OTP (NEW - Step 2 of signup) - Using backend API
   Future<Map<String, dynamic>> verifyOTP(String email, String otp) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final storedOtp = prefs.getString('pending_otp');
-      final storedEmail = prefs.getString('pending_email');
-      final otpTimestamp = prefs.getInt('otp_timestamp') ?? 0;
+      // Verify OTP via backend API
+      final response = await http.post(
+        Uri.parse('https://api.echofort.ai/auth/otp/verify'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'email': email,
+          'otp': otp,
+        }),
+      );
+
+      debugPrint('Backend OTP verify response: ${response.statusCode} - ${response.body}');
       
-      // Check if OTP is expired (5 minutes)
-      final now = DateTime.now().millisecondsSinceEpoch;
-      if (now - otpTimestamp > 5 * 60 * 1000) {
-        return {
-          'success': false,
-          'message': 'OTP has expired. Please request a new one.',
-        };
-      }
-      
-      // Verify OTP matches
-      if (storedOtp == otp && storedEmail == email) {
-        // Get stored user data
-        final username = prefs.getString('pending_username') ?? '';
-        final phone = prefs.getString('pending_phone') ?? '';
-        final password = prefs.getString('pending_password') ?? '';
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
         
-        // Create account via backend
-        final response = await _apiService.register(username, email, password, phone);
-        
-        // Clear pending data
-        await prefs.remove('pending_otp');
-        await prefs.remove('pending_email');
-        await prefs.remove('pending_username');
-        await prefs.remove('pending_phone');
-        await prefs.remove('pending_password');
-        await prefs.remove('otp_timestamp');
-        
-        return {
-          'success': response['ok'] == true,
-          'message': response['message'] ?? 'Account created successfully',
-        };
-      } else {
+        if (data['ok'] == true) {
+          // OTP verified successfully
+          // Get stored user data for registration
+          final prefs = await SharedPreferences.getInstance();
+          final username = prefs.getString('pending_username') ?? '';
+          final phone = prefs.getString('pending_phone') ?? '';
+          final password = prefs.getString('pending_password') ?? '';
+          
+          // Create account via backend
+          final registerResponse = await _apiService.register(username, email, password, phone);
+          
+          // Clear pending data
+          await prefs.remove('pending_email');
+          await prefs.remove('pending_username');
+          await prefs.remove('pending_phone');
+          await prefs.remove('pending_password');
+          await prefs.remove('otp_timestamp');
+          
+          return {
+            'success': registerResponse['ok'] == true,
+            'message': registerResponse['message'] ?? 'Account created successfully',
+          };
+        } else {
         return {
           'success': false,
           'message': 'Invalid OTP code. Please try again.',

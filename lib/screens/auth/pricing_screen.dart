@@ -14,21 +14,21 @@ class _PricingScreenState extends State<PricingScreen> {
   final Map<String, Map<String, dynamic>> _plans = {
     'monthly': {
       'name': 'Monthly Plan',
-      'price': 499,
+      'price': 399,
       'duration': '1 Month',
       'savings': null,
     },
     'quarterly': {
       'name': 'Quarterly Plan',
-      'price': 1299,
+      'price': 799,
       'duration': '3 Months',
-      'savings': '13% OFF',
+      'savings': '33% OFF',
     },
     'yearly': {
       'name': 'Yearly Plan',
-      'price': 4999,
+      'price': 1499,
       'duration': '12 Months',
-      'savings': '17% OFF',
+      'savings': '69% OFF',
     },
   };
 
