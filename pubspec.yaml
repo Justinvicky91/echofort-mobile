@@ -43,7 +43,7 @@ dependencies:
   image_picker: ^1.0.7
   
   # File Picker
-  file_picker: ^6.1.1
+  file_picker: ^8.1.4
   
   # Connectivity
   connectivity_plus: ^5.0.2
