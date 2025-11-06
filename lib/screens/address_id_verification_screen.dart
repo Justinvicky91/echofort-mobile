@@ -76,7 +76,7 @@ class _AddressIDVerificationScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(response['message'] ?? 'Verification completed!'),
-            backgroundColor: AppTheme.successColor,
+            backgroundColor: Colors.green,
           ),
         );
 
@@ -93,7 +93,7 @@ class _AddressIDVerificationScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: $e'),
-            backgroundColor: AppTheme.errorColor,
+            backgroundColor: Colors.red,
           ),
         );
       }
