@@ -36,7 +36,7 @@ dependencies:
   google_maps_flutter: ^2.5.3
   
   # Phone & SMS
-  telephony: ^0.2.0
+  telephony: ^0.2.1
   
   # URL Launcher
   url_launcher: ^6.2.4
