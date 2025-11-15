@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/echofort_logo.dart';
 import '../../widgets/standard_card.dart';
 import '../../widgets/status_badge.dart';
+import '../../widgets/alert_card.dart';
 import '../../models/subscription_plan.dart';
+import '../../services/api_service.dart';
 
 /// Paywall/Subscription Screen (§1.5)
 /// 
@@ -40,10 +43,19 @@ class _PaywallScreenState extends State<PaywallScreen> with TickerProviderStateM
   late List<AnimationController> _animationControllers;
   late List<Animation<double>> _fadeAnimations;
   late List<Animation<Offset>> _slideAnimations;
+  
+  late Razorpay _razorpay;
+  bool _isProcessingPayment = false;
 
   @override
   void initState() {
     super.initState();
+    
+    // Initialize Razorpay
+    _razorpay = Razorpay();
+    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
+    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
+    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
     
     // Initialize animations for each plan card
     _animationControllers = List.generate(
@@ -86,6 +98,7 @@ class _PaywallScreenState extends State<PaywallScreen> with TickerProviderStateM
     for (var controller in _animationControllers) {
       controller.dispose();
     }
+    _razorpay.clear();
     super.dispose();
   }
 
@@ -98,7 +111,7 @@ class _PaywallScreenState extends State<PaywallScreen> with TickerProviderStateM
     print('[ANALYTICS] Plan selected: $planId');
   }
 
-  void _continueToPurchase() {
+  Future<void> _continueToPurchase() async {
     if (_selectedPlanId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -109,16 +122,158 @@ class _PaywallScreenState extends State<PaywallScreen> with TickerProviderStateM
       return;
     }
 
-    // Analytics stub
-    print('[ANALYTICS] Continue to Razorpay: $_selectedPlanId');
+    if (_isProcessingPayment) return;
 
-    // TODO: Navigate to Razorpay payment screen (later step)
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Selected: $_selectedPlanId plan. Payment screen coming soon!'),
-        backgroundColor: AppTheme.accentSuccess,
-      ),
-    );
+    setState(() {
+      _isProcessingPayment = true;
+    });
+
+    try {
+      print('[PAYMENT] Creating Razorpay order for plan: $_selectedPlanId');
+      
+      // Create order on backend
+      final orderResponse = await ApiService.createRazorpayOrder(
+        plan: _selectedPlanId!,
+        isTrial: false,
+      );
+      
+      if (orderResponse['order_id'] == null) {
+        throw Exception('Failed to create order');
+      }
+      
+      final orderId = orderResponse['order_id'];
+      final amount = orderResponse['amount']; // Amount in paise
+      
+      print('[PAYMENT] Order created: $orderId, amount: $amount');
+      
+      // Get plan details for display
+      final plan = SubscriptionPlan.plans.firstWhere(
+        (p) => p.id == _selectedPlanId,
+      );
+      
+      // Open Razorpay checkout
+      var options = {
+        'key': 'rzp_test_YOUR_KEY_HERE', // TODO: Get from backend or env
+        'amount': amount,
+        'name': 'EchoFort',
+        'description': '${plan.name} Plan Subscription',
+        'order_id': orderId,
+        'prefill': {
+          'contact': '',
+          'email': '',
+        },
+        'theme': {
+          'color': '#3A7BFF',
+        },
+      };
+      
+      _razorpay.open(options);
+      
+    } catch (e) {
+      print('[PAYMENT] Error: $e');
+      
+      setState(() {
+        _isProcessingPayment = false;
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to initiate payment: $e'),
+            backgroundColor: AppTheme.accentDanger,
+          ),
+        );
+      }
+    }
+  }
+  
+  void _handlePaymentSuccess(PaymentSuccessResponse response) async {
+    print('[PAYMENT] Success: ${response.paymentId}');
+    print('[PAYMENT] Order ID: ${response.orderId}');
+    print('[PAYMENT] Signature: ${response.signature}');
+    
+    try {
+      // Verify payment on backend
+      final verifyResponse = await ApiService.verifyRazorpayPayment(
+        orderId: response.orderId!,
+        paymentId: response.paymentId!,
+        signature: response.signature!,
+        plan: _selectedPlanId!,
+        isTrial: false,
+      );
+      
+      if (verifyResponse['ok'] == true) {
+        print('[PAYMENT] Payment verified successfully');
+        
+        setState(() {
+          _isProcessingPayment = false;
+        });
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Payment successful! Subscription activated.'),
+              backgroundColor: AppTheme.accentSuccess,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+          
+          // Navigate to home screen
+          Navigator.pushReplacementNamed(context, '/home');
+        }
+      } else {
+        throw Exception('Payment verification failed');
+      }
+    } catch (e) {
+      print('[PAYMENT] Verification error: $e');
+      
+      setState(() {
+        _isProcessingPayment = false;
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Payment verification failed: $e'),
+            backgroundColor: AppTheme.accentDanger,
+          ),
+        );
+      }
+    }
+  }
+  
+  void _handlePaymentError(PaymentFailureResponse response) {
+    print('[PAYMENT] Error: ${response.code} - ${response.message}');
+    
+    setState(() {
+      _isProcessingPayment = false;
+    });
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Payment failed: ${response.message}'),
+          backgroundColor: AppTheme.accentDanger,
+        ),
+      );
+    }
+  }
+  
+  void _handleExternalWallet(ExternalWalletResponse response) {
+    print('[PAYMENT] External wallet: ${response.walletName}');
+    
+    setState(() {
+      _isProcessingPayment = false;
+    });
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('External wallet selected: ${response.walletName}'),
+          backgroundColor: AppTheme.accentInfo,
+        ),
+      );
+    }
   }
 
   @override
