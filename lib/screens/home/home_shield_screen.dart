@@ -3,6 +3,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/echofort_logo.dart';
 import '../../widgets/standard_card.dart';
 import '../../widgets/status_badge.dart';
+import '../../services/api_service.dart';
 
 /// Home Shield Screen (§1.7)
 /// 
@@ -32,15 +33,83 @@ class HomeShieldScreen extends StatefulWidget {
 class _HomeShieldScreenState extends State<HomeShieldScreen> {
   bool _isLoading = false;
   
-  // Mock data (TODO: Replace with real API calls)
-  int _threatScore = 87;
-  String _protectionStatus = 'Protected';
-  int _callsBlocked = 142;
-  int _threatsDetected = 23;
-  int _familyMembers = 4;
-  bool _hasFamilyPlan = true;
+  // Data from backend
+  int _threatScore = 0;
+  String _protectionStatus = 'Scanning';
+  int _callsBlocked = 0;
+  int _threatsDetected = 0;
+  int _familyMembers = 0;
+  bool _hasFamilyPlan = false;
+  List<Map<String, dynamic>> _recentCalls = [];
   
-  final List<Map<String, dynamic>> _recentCalls = [
+  @override
+  void initState() {
+    super.initState();
+    _loadDashboardData();
+  }
+  
+  Future<void> _loadDashboardData() async {
+    setState(() {
+      _isLoading = true;
+    });
+    
+    try {
+      print('[HOME] Loading dashboard data...');
+      
+      // Load recent calls
+      final calls = await ApiService.getRecentScamCalls();
+      
+      setState(() {
+        _recentCalls = calls.take(5).map((call) => {
+          'number': call['phone_number'] ?? 'Unknown',
+          'name': call['caller_name'] ?? 'Unknown',
+          'time': _formatTime(call['timestamp']),
+          'riskLevel': call['risk_level'] ?? 'low',
+          'type': call['scam_type'] ?? 'Unknown',
+        }).toList();
+        
+        _callsBlocked = calls.length;
+        _threatsDetected = calls.where((c) => c['risk_level'] == 'high' || c['risk_level'] == 'critical').length;
+        
+        // Calculate threat score (0-100)
+        if (calls.isEmpty) {
+          _threatScore = 100;
+          _protectionStatus = 'Protected';
+        } else if (_threatsDetected > 10) {
+          _threatScore = 50;
+          _protectionStatus = 'At Risk';
+        } else {
+          _threatScore = 75;
+          _protectionStatus = 'Protected';
+        }
+      });
+      
+      print('[HOME] Dashboard loaded: ${_recentCalls.length} calls');
+    } catch (e) {
+      print('[HOME] Error loading dashboard: $e');
+      // Keep default values on error
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+  
+  String _formatTime(dynamic timestamp) {
+    if (timestamp == null) return 'Unknown';
+    try {
+      final dt = DateTime.parse(timestamp.toString());
+      final diff = DateTime.now().difference(dt);
+      if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
+      if (diff.inHours < 24) return '${diff.inHours} hours ago';
+      return '${diff.inDays} days ago';
+    } catch (e) {
+      return 'Unknown';
+    }
+  }
+  
+  // Mock recent calls for fallback
+  final List<Map<String, dynamic>> _mockRecentCalls = [
     {
       'number': '+91 98765 43210',
       'name': 'Unknown',
@@ -79,24 +148,17 @@ class _HomeShieldScreenState extends State<HomeShieldScreen> {
   ];
 
   Future<void> _refreshData() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    // TODO: Implement real API calls
-    await Future.delayed(const Duration(seconds: 1));
-
-    setState(() {
-      _isLoading = false;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Dashboard refreshed'),
-        backgroundColor: AppTheme.accentSuccess,
-        duration: const Duration(seconds: 1),
-      ),
-    );
+    await _loadDashboardData();
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Dashboard refreshed'),
+          backgroundColor: AppTheme.accentSuccess,
+          duration: const Duration(seconds: 1),
+        ),
+      );
+    }
   }
 
   Color _getThreatScoreColor(int score) {
