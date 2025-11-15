@@ -574,6 +574,32 @@ class ApiService {
   }
   
   // ============================================================================
+  // SCAM REPORTING APIs
+  // ============================================================================
+  
+  /// Report a scam (phone number, URL, or QR code)
+  static Future<Map<String, dynamic>> reportScam({
+    required String type, // 'phone', 'url', 'qr'
+    required String value, // Phone number, URL, or QR content
+    String? description,
+    String? category, // 'financial', 'phishing', 'impersonation', etc.
+  }) async {
+    return await post('/api/report/scam', {
+      'type': type,
+      'value': value,
+      if (description != null) 'description': description,
+      if (category != null) 'category': category,
+      'reported_at': DateTime.now().toIso8601String(),
+    });
+  }
+  
+  /// Get user's scam reports
+  static Future<List<dynamic>> getMyReports() async {
+    final response = await get('/api/report/my-reports');
+    return response['reports'] ?? [];
+  }
+  
+  // ============================================================================
   // EVIDENCE VAULT APIs
   // ============================================================================
   

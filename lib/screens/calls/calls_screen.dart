@@ -3,8 +3,8 @@ import '../../theme/app_theme.dart';
 import '../../widgets/echofort_logo.dart';
 import '../../widgets/standard_card.dart';
 import '../../widgets/status_badge.dart';
-
-/// Calls Screen (§1.8)
+import '../../widgets/scam_report_dialog.dart';
+import '../../services/api_service.dart'; Calls Screen (§1.8)
 /// 
 /// Per ChatGPT CTO specification:
 /// "Full call history with scam detection results. Must show AI analysis for each call."
@@ -615,12 +615,19 @@ class _CallsScreenState extends State<CallsScreen> with SingleTickerProviderStat
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () {
-                      print('[ACTION] Block number: ${call['number']}');
+                    onPressed: () async {
                       Navigator.pop(context);
+                      final result = await ScamReportDialog.show(
+                        context,
+                        type: 'phone',
+                        value: call['number'],
+                      );
+                      if (result == true) {
+                        print('[ACTION] Scam reported: ${call['number']}');
+                      }
                     },
-                    icon: const Icon(Icons.block_rounded),
-                    label: const Text('Block'),
+                    icon: const Icon(Icons.report_outlined),
+                    label: const Text('Report Scam'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppTheme.accentDanger,
                       side: BorderSide(color: AppTheme.accentDanger),
