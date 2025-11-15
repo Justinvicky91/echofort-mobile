@@ -470,6 +470,56 @@ class ApiService {
   }
   
   // ============================================================================
+  // USER PROFILE APIs
+  // ============================================================================
+  
+  /// Get user profile
+  static Future<Map<String, dynamic>> getUserProfile() async {
+    return await get('/api/user/profile');
+  }
+  
+  /// Update user profile
+  static Future<Map<String, dynamic>> updateUserProfile({
+    required String name,
+    String? bio,
+    String? avatarUrl,
+  }) async {
+    return await put('/api/user/profile', {
+      'name': name,
+      if (bio != null) 'bio': bio,
+      if (avatarUrl != null) 'avatar_url': avatarUrl,
+    });
+  }
+  
+  /// Upload avatar image
+  static Future<Map<String, dynamic>> uploadAvatar(File imageFile) async {
+    try {
+      final uri = Uri.parse('$baseUrl/api/user/avatar');
+      final request = http.MultipartRequest('POST', uri);
+      
+      // Add auth header
+      if (_authToken != null) {
+        request.headers['Authorization'] = 'Bearer $_authToken';
+      }
+      
+      // Add image file
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'avatar',
+          imageFile.path,
+        ),
+      );
+      
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      
+      return _handleResponse(response);
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+  
+  // ============================================================================
   // LEGAL & TERMS APIs
   // ============================================================================
   

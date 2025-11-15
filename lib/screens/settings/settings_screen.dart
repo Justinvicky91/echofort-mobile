@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/echofort_logo.dart';
+import '../../services/api_service.dart';
+import '../profile/edit_profile_screen.dart';hofort_logo.dart';
 import '../../widgets/standard_card.dart';
 import '../../widgets/status_badge.dart';
 import '../../services/api_service.dart';
@@ -80,9 +81,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     print('[SETTINGS] Saved $key = $value');
   }
 
-  void _navigateToProfile() {
+  void _navigateToProfile() async {
     print('[NAV] Edit profile tapped');
-    // TODO: Navigate to profile edit screen
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const EditProfileScreen(),
+      ),
+    );
+    
+    // Reload settings if profile was updated
+    if (result == true) {
+      _loadSettings();
+    }
   }
 
   void _navigateToSubscription() {
