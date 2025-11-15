@@ -1,26 +1,25 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-// import 'package:razorpay_flutter/razorpay_flutter.dart'; // Add to pubspec.yaml
+import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 class PaymentService {
-  static const String baseUrl = 'https://echofort-backend.up.railway.app';
+  static const String baseUrl = 'https://api.echofort.ai';
   static const String razorpayKeyId = 'rzp_live_RaVY92nlBc6XrE';
   
-  // late Razorpay _razorpay; // Uncomment after adding razorpay_flutter package
+  late Razorpay _razorpay;
   
   /// Initialize Razorpay
   void initializeRazorpay({
     required Function(Map<String, dynamic>) onSuccess,
     required Function(Map<String, dynamic>) onError,
   }) {
-    // Uncomment after adding razorpay_flutter package
-    // _razorpay = Razorpay();
-    // _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, (response) {
-    //   onSuccess(response as Map<String, dynamic>);
-    // });
-    // _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, (response) {
-    //   onError(response as Map<String, dynamic>);
-    // });
+    _razorpay = Razorpay();
+    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, (response) {
+      onSuccess(response as Map<String, dynamic>);
+    });
+    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, (response) {
+      onError(response as Map<String, dynamic>);
+    });
   }
   
   /// Create Razorpay order
@@ -63,32 +62,31 @@ class PaymentService {
     required String userEmail,
     required String userPhone,
   }) {
-    // Uncomment after adding razorpay_flutter package
-    // var options = {
-    //   'key': razorpayKeyId,
-    //   'amount': (amount * 100).toInt(), // Amount in paise
-    //   'currency': 'INR',
-    //   'name': 'EchoFort',
-    //   'description': '$planName Plan',
-    //   'order_id': orderId,
-    //   'prefill': {
-    //     'name': userName,
-    //     'email': userEmail,
-    //     'contact': userPhone,
-    //   },
-    //   'theme': {
-    //     'color': '#1565C0',
-    //   },
-    //   'notes': {
-    //     'plan_name': planName,
-    //   },
-    // };
-    // 
-    // try {
-    //   _razorpay.open(options);
-    // } catch (e) {
-    //   print('Error opening Razorpay: $e');
-    // }
+    var options = {
+      'key': razorpayKeyId,
+      'amount': (amount * 100).toInt(), // Amount in paise
+      'currency': 'INR',
+      'name': 'EchoFort',
+      'description': '$planName Plan',
+      'order_id': orderId,
+      'prefill': {
+        'name': userName,
+        'email': userEmail,
+        'contact': userPhone,
+      },
+      'theme': {
+        'color': '#1565C0',
+      },
+      'notes': {
+        'plan_name': planName,
+      },
+    };
+    
+    try {
+      _razorpay.open(options);
+    } catch (e) {
+      print('Error opening Razorpay: $e');
+    }
   }
   
   /// Verify payment on backend
