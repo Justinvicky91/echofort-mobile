@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/echofort_logo.dart';
 import '../../widgets/standard_card.dart';
 import '../../widgets/status_badge.dart';
+import '../../services/api_service.dart';
 
 /// Settings Screen (§1.11)
 /// 
@@ -30,11 +32,11 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  // Mock user data (TODO: Replace with real user state)
-  String _userName = 'Rajesh Kumar';
-  String _userEmail = 'rajesh.kumar@example.com';
-  String _userPhone = '+91 98765 43210';
-  String _subscriptionPlan = 'Family';
+  // User data from SharedPreferences
+  String _userName = 'User';
+  String _userEmail = '';
+  String _userPhone = '';
+  String _subscriptionPlan = 'Basic';
   
   // Settings toggles
   bool _callScreeningEnabled = true;
@@ -43,6 +45,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _pushNotificationsEnabled = true;
   bool _emailNotificationsEnabled = false;
   bool _biometricAuthEnabled = false;
+  
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+  
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    
+    setState(() {
+      // Load user data
+      _userName = prefs.getString('user_name') ?? 'User';
+      _userEmail = prefs.getString('user_email') ?? '';
+      _userPhone = prefs.getString('user_phone') ?? '';
+      _subscriptionPlan = prefs.getString('subscription_plan') ?? 'Basic';
+      
+      // Load settings
+      _callScreeningEnabled = prefs.getBool('call_screening_enabled') ?? true;
+      _smsProtectionEnabled = prefs.getBool('sms_protection_enabled') ?? true;
+      _locationSharingEnabled = prefs.getBool('location_sharing_enabled') ?? true;
+      _pushNotificationsEnabled = prefs.getBool('push_notifications_enabled') ?? true;
+      _emailNotificationsEnabled = prefs.getBool('email_notifications_enabled') ?? false;
+      _biometricAuthEnabled = prefs.getBool('biometric_auth_enabled') ?? false;
+    });
+    
+    print('[SETTINGS] Loaded from SharedPreferences');
+  }
+  
+  Future<void> _saveSetting(String key, bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(key, value);
+    print('[SETTINGS] Saved $key = $value');
+  }
 
   void _navigateToProfile() {
     print('[NAV] Edit profile tapped');
@@ -104,14 +140,76 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              print('[API] POST /api/dpdp/export-request');
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Data export requested. Check your email in 24 hours.'),
-                  backgroundColor: AppTheme.accentSuccess,
-                  duration: const Duration(seconds: 3),
+              try {
+                print('[DPDP] Requesting data export...');
+                await ApiService.requestDataExport();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Data export requested. Check your email in 24 hours.'),
+                      backgroundColor: AppTheme.accentSuccess,
+                      duration: const Duration(seconds: 3),
+                    ),
+                  );
+                }
+              } catch (e) {
+                print('[DPDP] Export error: $e');
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to request export: $e'),
+                      backgroundColor: AppTheme.accentDanger,
+                    ),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primarySolid,
+            ),
+            child: const Text('Request Export'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _deleteAccount() {
+    print('[DPDP] Delete account tapped');
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.warning_rounded, color: AppTheme.accentDanger),
+            const SizedBox(width: 8),
+            const Text('Delete Account'),
+          ],
+        ),
+        content: const Text(
+          'This will permanently delete your account and all associated data. '
+          'This action cannot be undone.\n\n'
+          'Are you absolutely sure?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                print('[DPDP] Deleting account...');
+                await ApiService.deleteAccount();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Account deletion initiated. You will be logged out.'),
+                      backgroundColor: AppTheme.accentSuccess,
+                      duration: const Duration(seconds: 3),
                 ),
               );
             },
@@ -346,6 +444,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 setState(() {
                   _callScreeningEnabled = value;
                 });
+                _saveSetting('call_screening_enabled', value);
               },
             ),
             _buildToggleItem(
@@ -356,6 +455,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 setState(() {
                   _smsProtectionEnabled = value;
                 });
+                _saveSetting('sms_protection_enabled', value);
               },
             ),
             _buildToggleItem(
@@ -367,6 +467,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 setState(() {
                   _locationSharingEnabled = value;
                 });
+                _saveSetting('location_sharing_enabled', value);
               },
             ),
             
@@ -382,6 +483,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 setState(() {
                   _pushNotificationsEnabled = value;
                 });
+                _saveSetting('push_notifications_enabled', value);
               },
             ),
             _buildToggleItem(
@@ -392,6 +494,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 setState(() {
                   _emailNotificationsEnabled = value;
                 });
+                _saveSetting('email_notifications_enabled', value);
               },
             ),
             
@@ -407,6 +510,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 setState(() {
                   _biometricAuthEnabled = value;
                 });
+                _saveSetting('biometric_auth_enabled', value);
               },
             ),
             _buildSettingItem(
