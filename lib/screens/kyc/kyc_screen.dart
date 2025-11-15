@@ -1,6 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import '../../theme/app_theme.dart';
 import '../../widgets/echofort_logo.dart';
 import '../../widgets/standard_card.dart';
@@ -158,29 +161,74 @@ class _KYCScreenState extends State<KYCScreen> {
     });
 
     try {
-      // TODO: Implement actual API call to /api/user/verification/complete
-      // For now, simulate API delay
-      await Future.delayed(const Duration(seconds: 2));
-
       print('[KYC] Submitting verification:');
       print('  Name: ${_nameController.text}');
       print('  Address: ${_addressController.text}');
       print('  Document Type: $_selectedDocType');
       print('  Document Image: ${_documentImage!.path}');
 
-      // Analytics stub
-      print('[ANALYTICS] KYC submitted: $_selectedDocType');
+      // Get access token from SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      final accessToken = prefs.getString('access_token');
+      
+      if (accessToken == null) {
+        throw Exception('Not authenticated. Please login again.');
+      }
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('KYC verification submitted successfully!'),
-            backgroundColor: AppTheme.accentSuccess,
-          ),
-        );
+      // Create multipart request
+      final uri = Uri.parse('https://api.echofort.ai/api/user/verification/complete');
+      final request = http.MultipartRequest('POST', uri);
+      
+      // Add authorization header
+      request.headers['Authorization'] = 'Bearer $accessToken';
+      
+      // Add form fields
+      request.fields['full_name'] = _nameController.text.trim();
+      request.fields['address'] = _addressController.text.trim();
+      request.fields['id_type'] = _selectedDocType;
+      
+      // Add document image file
+      final imageFile = await http.MultipartFile.fromPath(
+        'id_document',
+        _documentImage!.path,
+      );
+      request.files.add(imageFile);
+      
+      print('[KYC] Sending multipart request to backend...');
+      
+      // Send request
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      
+      print('[KYC] Response: ${response.statusCode}');
+      print('[KYC] Body: ${response.body}');
+      
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        print('[KYC] Verification submitted successfully');
+        print('[ANALYTICS] KYC submitted: $_selectedDocType');
         
-        // Navigate back or to next screen
-        Navigator.pop(context);
+        // Store KYC status
+        await prefs.setString('kyc_status', 'pending');
+        await prefs.setString('kyc_submitted_at', DateTime.now().toIso8601String());
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('KYC verification submitted! We will review within 24 hours.'),
+              backgroundColor: AppTheme.accentSuccess,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+          
+          // Navigate back or to next screen
+          Navigator.pop(context);
+        }
+      } else {
+        // Handle error response
+        final errorData = jsonDecode(response.body);
+        final errorMessage = errorData['detail'] ?? errorData['message'] ?? 'Submission failed';
+        throw Exception(errorMessage);
       }
     } catch (e) {
       if (mounted) {
