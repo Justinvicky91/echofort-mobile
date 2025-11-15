@@ -470,6 +470,32 @@ class ApiService {
   }
   
   // ============================================================================
+  // LEGAL & TERMS APIs
+  // ============================================================================
+  
+  /// Accept Terms & Conditions and Privacy Policy
+  static Future<Map<String, dynamic>> acceptTerms({
+    required String termsVersion,
+    required String privacyVersion,
+  }) async {
+    return await post('/auth/accept-terms', {
+      'terms_version': termsVersion,
+      'privacy_version': privacyVersion,
+      'accepted_at': DateTime.now().toIso8601String(),
+    });
+  }
+  
+  /// Get Terms & Conditions document
+  static Future<Map<String, dynamic>> getTerms({String version = 'latest'}) async {
+    return await get('/legal/terms?version=$version', requiresAuth: false);
+  }
+  
+  /// Get Privacy Policy document
+  static Future<Map<String, dynamic>> getPrivacy({String version = 'latest'}) async {
+    return await get('/legal/privacy?version=$version', requiresAuth: false);
+  }
+  
+  // ============================================================================
   // EVIDENCE VAULT APIs
   // ============================================================================
   

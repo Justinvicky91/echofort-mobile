@@ -5,6 +5,7 @@ import '../../services/auth_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/echofort_logo.dart';
 import '../../widgets/alert_card.dart';
+import 'terms_acceptance_screen.dart';
 
 /// OTP Verification Screen (§1.4)
 /// 
@@ -107,8 +108,13 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
             ),
           );
           
-          // Navigate back to login
-          Navigator.of(context).popUntil((route) => route.isFirst);
+          // Navigate to Terms Acceptance screen
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const TermsAcceptanceScreen(),
+            ),
+          );
         }
       } else {
         setState(() {
