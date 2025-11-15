@@ -423,6 +423,52 @@ class ApiService {
     });
   }
   
+  /// Get family member location
+  static Future<Map<String, dynamic>> getFamilyMemberLocation(int userId) async {
+    final response = await get('/api/gps/member/$userId/location');
+    return response;
+  }
+  
+  /// Save current GPS location
+  static Future<Map<String, dynamic>> saveLocation({
+    required double latitude,
+    required double longitude,
+    double? accuracy,
+  }) async {
+    return await post('/api/gps/location', {
+      'latitude': latitude,
+      'longitude': longitude,
+      'accuracy': accuracy,
+    });
+  }
+  
+  /// Get location history
+  static Future<List<dynamic>> getLocationHistory({int limit = 100}) async {
+    final response = await get('/api/gps/history?limit=$limit');
+    return response['locations'] ?? [];
+  }
+  
+  /// Create geofence
+  static Future<Map<String, dynamic>> createGeofence({
+    required String name,
+    required double latitude,
+    required double longitude,
+    required int radius,
+  }) async {
+    return await post('/api/gps/geofence', {
+      'name': name,
+      'latitude': latitude,
+      'longitude': longitude,
+      'radius': radius,
+    });
+  }
+  
+  /// Get geofences
+  static Future<List<dynamic>> getGeofences() async {
+    final response = await get('/api/gps/geofences');
+    return response['geofences'] ?? [];
+  }
+  
   // ============================================================================
   // EVIDENCE VAULT APIs
   // ============================================================================
