@@ -470,6 +470,34 @@ class ApiService {
   }
   
   // ============================================================================
+  // USER SETTINGS APIs
+  // ============================================================================
+  
+  /// Get user settings
+  static Future<Map<String, dynamic>> getUserSettings() async {
+    return await get('/api/user/settings');
+  }
+  
+  /// Update user settings
+  static Future<Map<String, dynamic>> updateUserSettings({
+    required bool callScreeningEnabled,
+    required bool smsProtectionEnabled,
+    required bool locationSharingEnabled,
+    required bool pushNotificationsEnabled,
+    required bool emailNotificationsEnabled,
+    required bool biometricAuthEnabled,
+  }) async {
+    return await put('/api/user/settings', {
+      'call_screening_enabled': callScreeningEnabled,
+      'sms_protection_enabled': smsProtectionEnabled,
+      'location_sharing_enabled': locationSharingEnabled,
+      'push_notifications_enabled': pushNotificationsEnabled,
+      'email_notifications_enabled': emailNotificationsEnabled,
+      'biometric_auth_enabled': biometricAuthEnabled,
+    });
+  }
+  
+  // ============================================================================
   // USER PROFILE APIs
   // ============================================================================
   

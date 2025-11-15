@@ -56,6 +56,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     
+    // Load from SharedPreferences first (offline support)
     setState(() {
       // Load user data
       _userName = prefs.getString('user_name') ?? 'User';
@@ -73,12 +74,56 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
     
     print('[SETTINGS] Loaded from SharedPreferences');
+    
+    // Sync with backend
+    try {
+      final settings = await ApiService.getUserSettings();
+      
+      setState(() {
+        _callScreeningEnabled = settings['call_screening_enabled'] ?? true;
+        _smsProtectionEnabled = settings['sms_protection_enabled'] ?? true;
+        _locationSharingEnabled = settings['location_sharing_enabled'] ?? true;
+        _pushNotificationsEnabled = settings['push_notifications_enabled'] ?? true;
+        _emailNotificationsEnabled = settings['email_notifications_enabled'] ?? false;
+        _biometricAuthEnabled = settings['biometric_auth_enabled'] ?? false;
+      });
+      
+      // Update SharedPreferences with backend values
+      await prefs.setBool('call_screening_enabled', _callScreeningEnabled);
+      await prefs.setBool('sms_protection_enabled', _smsProtectionEnabled);
+      await prefs.setBool('location_sharing_enabled', _locationSharingEnabled);
+      await prefs.setBool('push_notifications_enabled', _pushNotificationsEnabled);
+      await prefs.setBool('email_notifications_enabled', _emailNotificationsEnabled);
+      await prefs.setBool('biometric_auth_enabled', _biometricAuthEnabled);
+      
+      print('[SETTINGS] Synced with backend');
+    } catch (e) {
+      print('[SETTINGS] Error syncing with backend: $e');
+      // Continue with local settings
+    }
   }
   
   Future<void> _saveSetting(String key, bool value) async {
+    // Save to SharedPreferences
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(key, value);
-    print('[SETTINGS] Saved $key = $value');
+    print('[SETTINGS] Saved $key = $value to local');
+    
+    // Sync to backend
+    try {
+      await ApiService.updateUserSettings(
+        callScreeningEnabled: _callScreeningEnabled,
+        smsProtectionEnabled: _smsProtectionEnabled,
+        locationSharingEnabled: _locationSharingEnabled,
+        pushNotificationsEnabled: _pushNotificationsEnabled,
+        emailNotificationsEnabled: _emailNotificationsEnabled,
+        biometricAuthEnabled: _biometricAuthEnabled,
+      );
+      print('[SETTINGS] Synced $key = $value to backend');
+    } catch (e) {
+      print('[SETTINGS] Error syncing to backend: $e');
+      // Settings still saved locally
+    }
   }
 
   void _navigateToProfile() async {
