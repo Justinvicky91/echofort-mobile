@@ -62,3 +62,6 @@ flutter:
   assets:
     - assets/images/
     - assets/onboarding/
+    - assets/logo_echofort_primary.png
+    - assets/logo_echofort_white.png
+    - assets/logo_echofort_watermark.png

@@ -1,10 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:async';
-import 'onboarding_screen.dart';
+import '../widgets/echofort_logo.dart';
 import '../theme/app_theme.dart';
+import 'onboarding_screen.dart';
 
-/// Splash Screen with gradient background and animated logo
-/// Based on Truecaller/Life360 UI/UX patterns
+/// Splash Screen
+/// 
+/// Displays the EchoFort logo and tagline while the app initializes.
+/// Duration: 2 seconds with fade-in animation
+/// 
+/// Design specs from BRANDING.md:
+/// - Background: solid white (#FFFFFF)
+/// - Logo: centered, animated fade-in + scale
+/// - Logo size: 180dp
+/// - Tagline: "India's Digital Safety Shield"
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
 
@@ -35,7 +45,7 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
     
-    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(
         parent: _animationController,
         curve: const Interval(0.0, 0.6, curve: Curves.easeOutBack),
@@ -47,6 +57,7 @@ class _SplashScreenState extends State<SplashScreen>
     
     // Navigate to next screen after 2 seconds
     Timer(const Duration(seconds: 2), () {
+      if (!mounted) return;
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) =>
@@ -68,18 +79,17 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Set status bar to light mode
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+      ),
+    );
+    
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppTheme.primaryBlue,
-              AppTheme.primaryPurple,
-            ],
-          ),
-        ),
+      backgroundColor: AppTheme.backgroundWhite,
+      body: SafeArea(
         child: Center(
           child: AnimatedBuilder(
             animation: _animationController,
@@ -91,60 +101,49 @@ class _SplashScreenState extends State<SplashScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Logo
-                      Container(
-                        width: 180,
-                        height: 180,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 20,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: Text(
-                            'EF',
-                            style: TextStyle(
-                              fontSize: 72,
-                              fontWeight: FontWeight.bold,
-                              foreground: Paint()
-                                ..shader = const LinearGradient(
-                                  colors: [
-                                    AppTheme.primaryBlue,
-                                    AppTheme.primaryPurple,
-                                  ],
-                                ).createShader(
-                                  const Rect.fromLTWH(0, 0, 200, 70),
-                                ),
-                            ),
-                          ),
-                        ),
+                      // EchoFort Logo
+                      const EchoFortLogo(
+                        size: 180,
+                        variant: LogoVariant.primary,
                       ),
-                      const SizedBox(height: AppTheme.spaceXL),
+                      
+                      const SizedBox(height: 24),
+                      
                       // App Name
-                      const Text(
+                      Text(
                         'EchoFort',
                         style: TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          letterSpacing: 1.5,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.textPrimary,
+                          letterSpacing: -0.5,
                         ),
                       ),
-                      const SizedBox(height: AppTheme.spaceXS),
+                      
+                      const SizedBox(height: 8),
+                      
                       // Tagline
-                      const Text(
-                        'AI-Powered Protection',
+                      Text(
+                        'India\'s Digital Safety Shield',
                         style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white70,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          color: AppTheme.textSecondary,
                           letterSpacing: 0.5,
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 48),
+                      
+                      // Loading indicator
+                      SizedBox(
+                        width: 32,
+                        height: 32,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 3,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            AppTheme.primarySolid,
+                          ),
                         ),
                       ),
                     ],
