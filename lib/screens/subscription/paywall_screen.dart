@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/echofort_logo.dart';
-import '../../widgets/standard_card.dart';
-import '../../widgets/status_badge.dart';
+import '../../services/api_service.dart';
+import '../../services/kill_switch_service.dart';
+import '../../models/subscription_plan.dart';
+import '../home/home_shield_screen.dart';s/status_badge.dart';
 import '../../widgets/alert_card.dart';
 import '../../models/subscription_plan.dart';
 import '../../services/api_service.dart';
@@ -111,21 +112,36 @@ class _PaywallScreenState extends State<PaywallScreen> with TickerProviderStateM
     print('[ANALYTICS] Plan selected: $planId');
   }
 
-  Future<void> _continueToPurchase() async {
+  Future<void> _handlePayment() async {
     if (_selectedPlanId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please select a plan to continue'),
+          content: const Text('Please select a plan'),
           backgroundColor: AppTheme.accentWarning,
         ),
       );
       return;
     }
-
-    if (_isProcessingPayment) return;
-
+    
+    // Check if payments are enabled (kill switch)
+    final paymentEnabled = await KillSwitchService.isFeatureEnabled('payment_enabled');
+    if (!paymentEnabled) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(KillSwitchService.getDisabledMessage('payment_enabled')),
+            backgroundColor: AppTheme.accentDanger,
+          ),
+        );
+      }
+      return;
+    }
+    
     setState(() {
       _isProcessingPayment = true;
+    });
+    
+    try { _isProcessingPayment = true;
     });
 
     try {
