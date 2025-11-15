@@ -45,6 +45,9 @@ dependencies:
   # File Picker
   file_picker: ^8.1.4
   
+  # QR/Barcode Scanner
+  mobile_scanner: ^5.2.3
+  
   # Connectivity
   connectivity_plus: ^5.0.2
   

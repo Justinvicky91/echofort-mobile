@@ -3,6 +3,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/echofort_logo.dart';
 import '../../widgets/standard_card.dart';
 import '../../widgets/status_badge.dart';
+import '../../services/api_service.dart';
 
 /// Scan Screen (§1.10)
 /// 
@@ -96,22 +97,67 @@ class _ScanScreenState extends State<ScanScreen> {
   Future<void> _handleScanResult(String content, String type) async {
     _stopScanning();
     
-    // TODO: Call backend API for verification
     print('[SCAN] Verifying: $content (type: $type)');
     
-    // Simulate API delay
-    await Future.delayed(const Duration(milliseconds: 500));
-    
-    // Mock result
-    final result = {
-      'id': DateTime.now().millisecondsSinceEpoch.toString(),
-      'type': type,
-      'content': content,
-      'time': 'Just now',
-      'riskLevel': 'critical',
-      'verdict': 'Phishing Site',
-      'confidence': 95,
-    };
+    try {
+      // Call backend API for verification
+      final apiResponse = await ApiService.checkURL(content);
+      
+      print('[SCAN] API Response: $apiResponse');
+      
+      // Map API response to UI format
+      final result = {
+        'id': DateTime.now().millisecondsSinceEpoch.toString(),
+        'type': type,
+        'content': content,
+        'time': 'Just now',
+        'riskLevel': _mapRiskLevel(apiResponse['risk_level'] ?? 'low'),
+        'verdict': apiResponse['verdict'] ?? 'Unknown',
+        'confidence': apiResponse['confidence'] ?? 0,
+      };
+      
+      // Add to history
+      setState(() {
+        _scanHistory.insert(0, result);
+      });
+      
+      // Show result dialog
+      if (mounted) {
+        _showScanResultDialog(result);
+      }
+    } catch (e) {
+      print('[SCAN] Error: $e');
+      
+      // Fallback to mock result on error
+      final result = {
+        'id': DateTime.now().millisecondsSinceEpoch.toString(),
+        'type': type,
+        'content': content,
+        'time': 'Just now',
+        'riskLevel': 'unknown',
+        'verdict': 'Verification Failed',
+        'confidence': 0,
+      };
+      
+      if (mounted) {
+        _showScanResultDialog(result);
+      }
+    }
+  }
+  
+  String _mapRiskLevel(String apiLevel) {
+    switch (apiLevel.toLowerCase()) {
+      case 'critical':
+      case 'high':
+        return 'critical';
+      case 'medium':
+        return 'high';
+      case 'low':
+        return 'safe';
+      default:
+        return 'unknown';
+    }
+  }
     
     // Show result dialog
     if (mounted) {
