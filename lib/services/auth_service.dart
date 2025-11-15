@@ -66,11 +66,14 @@ class AuthService with ChangeNotifier {
   // Request OTP (NEW - Step 1 of signup) - Using backend API
   Future<Map<String, dynamic>> requestOTP(String email, String username, String phone, String password) async {
     try {
+      debugPrint('[AUTH] Requesting OTP for phone: $phone, email: $email');
+      
       // Request OTP from backend API (uses SendGrid)
       final response = await http.post(
         Uri.parse('https://api.echofort.ai/auth/otp/request'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
+          'phone_number': phone,
           'email': email,
         }),
       );
@@ -111,11 +114,18 @@ class AuthService with ChangeNotifier {
   // Verify OTP (NEW - Step 2 of signup) - Using backend API
   Future<Map<String, dynamic>> verifyOTP(String email, String otp) async {
     try {
+      // Get stored phone number
+      final prefs = await SharedPreferences.getInstance();
+      final phone = prefs.getString('pending_phone') ?? '';
+      
+      debugPrint('[AUTH] Verifying OTP for phone: $phone, email: $email, otp: $otp');
+      
       // Verify OTP via backend API
       final response = await http.post(
         Uri.parse('https://api.echofort.ai/auth/otp/verify'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
+          'phone_number': phone,
           'email': email,
           'otp': otp,
         }),
@@ -126,16 +136,35 @@ class AuthService with ChangeNotifier {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         
-        if (data['ok'] == true) {
-          // OTP verified successfully
-          // Get stored user data for registration
+        if (data['ok'] == true || data['access_token'] != null) {
+          // OTP verified successfully - Store JWT tokens
           final prefs = await SharedPreferences.getInstance();
-          final username = prefs.getString('pending_username') ?? '';
-          final phone = prefs.getString('pending_phone') ?? '';
-          final password = prefs.getString('pending_password') ?? '';
           
-          // Create account via backend
-          final registerResponse = await _apiService.register(username, email, password, phone);
+          // Store JWT tokens if provided
+          if (data['access_token'] != null) {
+            await prefs.setString('access_token', data['access_token']);
+            debugPrint('[AUTH] Access token stored');
+          }
+          if (data['refresh_token'] != null) {
+            await prefs.setString('refresh_token', data['refresh_token']);
+            debugPrint('[AUTH] Refresh token stored');
+          }
+          
+          // Store user data
+          if (data['user'] != null) {
+            _userId = data['user']['id'];
+            _userEmail = data['user']['email'];
+            _userName = data['user']['name'] ?? data['user']['username'];
+            
+            await prefs.setInt('user_id', _userId!);
+            await prefs.setString('user_email', _userEmail!);
+            await prefs.setString('user_name', _userName!);
+          }
+          
+          // Mark as authenticated
+          _isAuthenticated = true;
+          await prefs.setBool('is_authenticated', true);
+          notifyListeners();
           
           // Clear pending data
           await prefs.remove('pending_email');
@@ -144,9 +173,12 @@ class AuthService with ChangeNotifier {
           await prefs.remove('pending_password');
           await prefs.remove('otp_timestamp');
           
+          debugPrint('[AUTH] User authenticated successfully');
+          
           return {
-            'success': registerResponse['ok'] == true,
-            'message': registerResponse['message'] ?? 'Account created successfully',
+            'success': true,
+            'message': data['message'] ?? 'Logged in successfully',
+            'user': data['user'],
           };
         } else {
         return {
