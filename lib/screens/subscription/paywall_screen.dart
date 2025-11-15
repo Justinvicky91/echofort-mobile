@@ -143,6 +143,11 @@ class _PaywallScreenState extends State<PaywallScreen> with TickerProviderStateM
       
       final orderId = orderResponse['order_id'];
       final amount = orderResponse['amount']; // Amount in paise
+      final razorpayKey = orderResponse['razorpay_key']; // Get key from backend
+      
+      if (razorpayKey == null || razorpayKey.isEmpty) {
+        throw Exception('Razorpay key not provided by backend');
+      }
       
       print('[PAYMENT] Order created: $orderId, amount: $amount');
       
@@ -153,7 +158,7 @@ class _PaywallScreenState extends State<PaywallScreen> with TickerProviderStateM
       
       // Open Razorpay checkout
       var options = {
-        'key': 'rzp_test_YOUR_KEY_HERE', // TODO: Get from backend or env
+        'key': razorpayKey, // Use key from backend (test or production)
         'amount': amount,
         'name': 'EchoFort',
         'description': '${plan.name} Plan Subscription',
