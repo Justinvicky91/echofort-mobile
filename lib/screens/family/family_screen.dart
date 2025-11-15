@@ -4,6 +4,8 @@ import '../../widgets/echofort_logo.dart';
 import '../../widgets/standard_card.dart';
 import '../../widgets/status_badge.dart';
 import '../../services/api_service.dart';
+import '../../services/feature_gate_service.dart';
+import '../../widgets/upgrade_prompt_dialog.dart';
 import 'package:geolocator/geolocator.dart';
 
 /// Family Screen (§1.9)
@@ -42,8 +44,32 @@ class _FamilyScreenState extends State<FamilyScreen> {
   @override
   void initState() {
     super.initState();
-    _loadFamilyLocations();
-    _startLocationSharing();
+    _checkAccessAndLoad();
+  }
+  
+  Future<void> _checkAccessAndLoad() async {
+    // Check if user has access to Family GPS feature
+    final hasAccess = await FeatureGateService.hasAccess(
+      FeatureGateService.FEATURE_FAMILY_GPS,
+    );
+    
+    if (!hasAccess) {
+      // Show upgrade prompt immediately
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          UpgradePromptDialog.show(
+            context,
+            FeatureGateService.FEATURE_FAMILY_GPS,
+            customMessage: 'Family GPS Tracking is only available on Family plan. Upgrade to track your family members in real-time.',
+          );
+        });
+      }
+      return;
+    }
+    
+    // User has access, load data
+    _loadFamilyMembers();
+  }   _startLocationSharing();
   }
   
   Future<void> _loadFamilyLocations() async {
