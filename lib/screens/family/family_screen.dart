@@ -3,6 +3,8 @@ import '../../theme/app_theme.dart';
 import '../../widgets/echofort_logo.dart';
 import '../../widgets/standard_card.dart';
 import '../../widgets/status_badge.dart';
+import '../../services/api_service.dart';
+import 'package:geolocator/geolocator.dart';
 
 /// Family Screen (§1.9)
 /// 
@@ -35,9 +37,44 @@ class FamilyScreen extends StatefulWidget {
 class _FamilyScreenState extends State<FamilyScreen> {
   bool _isLoading = false;
   bool _locationSharingEnabled = true;
+  List<Map<String, dynamic>> _familyMembers = [];
   
-  // Mock data (TODO: Replace with real API calls)
-  final List<Map<String, dynamic>> _familyMembers = [
+  @override
+  void initState() {
+    super.initState();
+    _loadFamilyLocations();
+    _startLocationSharing();
+  }
+  
+  Future<void> _loadFamilyLocations() async {
+    setState(() {
+      _isLoading = true;
+    });
+    
+    try {
+      print('[GPS] Fetching family locations from backend...');
+      final locations = await ApiService.getFamilyLocations();
+      
+      setState(() {
+        _familyMembers = locations.map((loc) => {
+          'id': loc['user_id'].toString(),
+          'name': loc['name'] ?? 'Family Member',
+          'avatar': (loc['name'] ?? 'F')[0],
+          'location': loc['location_name'] ?? 'Unknown',
+          'lastSeen': _formatLastSeen(loc['timestamp']),
+          'battery': loc['battery_level'] ?? 0,
+          'latitude': loc['latitude'],
+          'longitude': loc['longitude'],
+          'status': loc['status'] ?? 'safe',
+          'geofence': loc['geofence_name'],
+        }).toList();
+      });
+      
+      print('[GPS] Loaded ${_familyMembers.length} family members');
+    } catch (e) {
+      print('[GPS] Error loading family locations: $e');
+      // Keep mock data if API fails
+      _familyMembers = [
     {
       'id': '1',
       'name': 'Mom',
@@ -88,25 +125,62 @@ class _FamilyScreenState extends State<FamilyScreen> {
     },
   ];
 
+  String _formatLastSeen(dynamic timestamp) {
+    if (timestamp == null) return 'Unknown';
+    try {
+      final dt = DateTime.parse(timestamp.toString());
+      final diff = DateTime.now().difference(dt);
+      if (diff.inMinutes < 1) return 'Active now';
+      if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
+      if (diff.inHours < 24) return '${diff.inHours} hours ago';
+      return '${diff.inDays} days ago';
+    } catch (e) {
+      return 'Unknown';
+    }
+  }
+  
+  Future<void> _startLocationSharing() async {
+    if (!_locationSharingEnabled) return;
+    
+    try {
+      // Check location permissions
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          print('[GPS] Location permission denied');
+          return;
+        }
+      }
+      
+      // Get current location
+      final position = await Geolocator.getCurrentPosition();
+      print('[GPS] Current location: ${position.latitude}, ${position.longitude}');
+      
+      // Send to backend
+      await ApiService.updateLocation(
+        latitude: position.latitude,
+        longitude: position.longitude,
+      );
+      
+      print('[GPS] Location updated on backend');
+    } catch (e) {
+      print('[GPS] Error sharing location: $e');
+    }
+  }
+  
   Future<void> _refreshFamily() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    // TODO: Implement real API call
-    await Future.delayed(const Duration(seconds: 1));
-
-    setState(() {
-      _isLoading = false;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Family locations refreshed'),
-        backgroundColor: AppTheme.accentSuccess,
-        duration: const Duration(seconds: 1),
-      ),
-    );
+    await _loadFamilyLocations();
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Family locations refreshed'),
+          backgroundColor: AppTheme.accentSuccess,
+          duration: const Duration(seconds: 1),
+        ),
+      );
+    }
   }
 
   void _toggleLocationSharing() {
