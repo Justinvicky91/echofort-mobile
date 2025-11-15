@@ -1,211 +1,573 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_theme.dart';
+import '../../widgets/echofort_logo.dart';
+import '../../widgets/standard_card.dart';
+import '../../widgets/status_badge.dart';
 
+/// Settings Screen (§1.11)
+/// 
+/// Per ChatGPT CTO specification:
+/// "User preferences + DPDP Act 2023 compliance controls. Must include data export/deletion."
+/// 
+/// Design Requirements:
+/// - Profile section with avatar and subscription badge
+/// - Settings sections: Account, Privacy, Notifications, Security, DPDP Rights
+/// - DPDP controls: View Data, Export Data, Delete Account, Consent Management
+/// - Toggle switches for preferences
+/// - Logout button
+/// 
+/// Technical Requirements:
+/// - Settings persistence (shared_preferences)
+/// - DPDP API integration (/api/dpdp/*)
+/// - Account deletion confirmation flow
+/// - Data export functionality
+/// - Consent management UI
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  const SettingsScreen({Key? key}) : super(key: key);
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
+  _SettingsScreenState createState() => _SettingsScreenState();
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _notificationsEnabled = true;
-  bool _autoCallRecording = false;
-  bool _autoSMSScanning = true;
-  bool _locationTracking = true;
-  String _language = 'English';
-  String _theme = 'System';
+  // Mock user data (TODO: Replace with real user state)
+  String _userName = 'Rajesh Kumar';
+  String _userEmail = 'rajesh.kumar@example.com';
+  String _userPhone = '+91 98765 43210';
+  String _subscriptionPlan = 'Family';
+  
+  // Settings toggles
+  bool _callScreeningEnabled = true;
+  bool _smsProtectionEnabled = true;
+  bool _locationSharingEnabled = true;
+  bool _pushNotificationsEnabled = true;
+  bool _emailNotificationsEnabled = false;
+  bool _biometricAuthEnabled = false;
+
+  void _navigateToProfile() {
+    print('[NAV] Edit profile tapped');
+    // TODO: Navigate to profile edit screen
+  }
+
+  void _navigateToSubscription() {
+    print('[NAV] Manage subscription tapped');
+    // TODO: Navigate to subscription management screen
+  }
+
+  void _viewMyData() {
+    print('[DPDP] View my data tapped');
+    // TODO: Navigate to data view screen
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Your Data'),
+        content: const Text(
+          'This will show all data we have collected about you, including:\n\n'
+          '• Personal information\n'
+          '• Call logs and scam reports\n'
+          '• Location history (if Family plan)\n'
+          '• Preferences and settings',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // TODO: Navigate to detailed data view
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primarySolid,
+            ),
+            child: const Text('View Details'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _exportMyData() {
+    print('[DPDP] Export my data tapped');
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Export Your Data'),
+        content: const Text(
+          'We will prepare a complete export of your data in JSON format. '
+          'You will receive a download link via email within 24 hours.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              print('[API] POST /api/dpdp/export-request');
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Data export requested. Check your email in 24 hours.'),
+                  backgroundColor: AppTheme.accentSuccess,
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primarySolid,
+            ),
+            child: const Text('Request Export'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _manageConsent() {
+    print('[DPDP] Manage consent tapped');
+    // TODO: Navigate to consent management screen
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Consent Management'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Control how we use your data:',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 16),
+            _buildConsentItem('Call Screening', true),
+            _buildConsentItem('SMS Protection', true),
+            _buildConsentItem('Location Tracking', true),
+            _buildConsentItem('Analytics', false),
+            _buildConsentItem('Marketing', false),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Consent preferences saved'),
+                  backgroundColor: AppTheme.accentSuccess,
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primarySolid,
+            ),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _deleteAccount() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.warning_rounded, color: AppTheme.accentDanger),
+            const SizedBox(width: 8),
+            const Text('Delete Account'),
+          ],
+        ),
+        content: const Text(
+          'This action is permanent and cannot be undone. All your data will be deleted within 30 days.\n\n'
+          'Are you absolutely sure?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _confirmDeleteAccount();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.accentDanger,
+            ),
+            child: const Text('Delete Account'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeleteAccount() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Final Confirmation'),
+        content: TextField(
+          decoration: const InputDecoration(
+            hintText: 'Type DELETE to confirm',
+            border: OutlineInputBorder(),
+          ),
+          onChanged: (value) {
+            // TODO: Enable delete button only if value == 'DELETE'
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              print('[API] POST /api/dpdp/delete-account');
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Account deletion initiated. You will be logged out.'),
+                  backgroundColor: AppTheme.accentDanger,
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+              // TODO: Logout and navigate to login screen
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.accentDanger,
+            ),
+            child: const Text('Confirm Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _logout() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              print('[AUTH] Logout');
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Logged out successfully'),
+                  backgroundColor: AppTheme.accentSuccess,
+                ),
+              );
+              // TODO: Clear auth state and navigate to login
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primarySolid,
+            ),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.backgroundLight,
       appBar: AppBar(
-        title: const Text('Settings'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const EchoFortLogo(size: 24, variant: LogoVariant.primary),
+            const SizedBox(width: 8),
+            Text(
+              'Settings',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+          ],
+        ),
+        centerTitle: true,
       ),
-      body: ListView(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Profile section
+            _buildProfileSection(),
+            
+            const SizedBox(height: 24),
+            
+            // Account section
+            _buildSectionHeader('Account'),
+            _buildSettingItem(
+              icon: Icons.person_rounded,
+              title: 'Edit Profile',
+              onTap: _navigateToProfile,
+            ),
+            _buildSettingItem(
+              icon: Icons.credit_card_rounded,
+              title: 'Manage Subscription',
+              trailing: StatusBadge(
+                label: _subscriptionPlan,
+                type: BadgeType.success,
+                small: true,
+              ),
+              onTap: _navigateToSubscription,
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Privacy section
+            _buildSectionHeader('Privacy'),
+            _buildToggleItem(
+              icon: Icons.phone_rounded,
+              title: 'Call Screening',
+              value: _callScreeningEnabled,
+              onChanged: (value) {
+                setState(() {
+                  _callScreeningEnabled = value;
+                });
+              },
+            ),
+            _buildToggleItem(
+              icon: Icons.message_rounded,
+              title: 'SMS Protection',
+              value: _smsProtectionEnabled,
+              onChanged: (value) {
+                setState(() {
+                  _smsProtectionEnabled = value;
+                });
+              },
+            ),
+            _buildToggleItem(
+              icon: Icons.location_on_rounded,
+              title: 'Location Sharing',
+              subtitle: 'Family plan only',
+              value: _locationSharingEnabled,
+              onChanged: (value) {
+                setState(() {
+                  _locationSharingEnabled = value;
+                });
+              },
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Notifications section
+            _buildSectionHeader('Notifications'),
+            _buildToggleItem(
+              icon: Icons.notifications_rounded,
+              title: 'Push Notifications',
+              value: _pushNotificationsEnabled,
+              onChanged: (value) {
+                setState(() {
+                  _pushNotificationsEnabled = value;
+                });
+              },
+            ),
+            _buildToggleItem(
+              icon: Icons.email_rounded,
+              title: 'Email Notifications',
+              value: _emailNotificationsEnabled,
+              onChanged: (value) {
+                setState(() {
+                  _emailNotificationsEnabled = value;
+                });
+              },
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Security section
+            _buildSectionHeader('Security'),
+            _buildToggleItem(
+              icon: Icons.fingerprint_rounded,
+              title: 'Biometric Authentication',
+              value: _biometricAuthEnabled,
+              onChanged: (value) {
+                setState(() {
+                  _biometricAuthEnabled = value;
+                });
+              },
+            ),
+            _buildSettingItem(
+              icon: Icons.lock_rounded,
+              title: 'Change Password',
+              onTap: () {
+                print('[NAV] Change password tapped');
+              },
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // DPDP Rights section
+            _buildSectionHeader('Your Data Rights (DPDP Act 2023)'),
+            _buildSettingItem(
+              icon: Icons.visibility_rounded,
+              title: 'View My Data',
+              subtitle: 'See what data we have about you',
+              onTap: _viewMyData,
+            ),
+            _buildSettingItem(
+              icon: Icons.download_rounded,
+              title: 'Export My Data',
+              subtitle: 'Download a copy of your data',
+              onTap: _exportMyData,
+            ),
+            _buildSettingItem(
+              icon: Icons.check_circle_rounded,
+              title: 'Manage Consent',
+              subtitle: 'Control how we use your data',
+              onTap: _manageConsent,
+            ),
+            _buildSettingItem(
+              icon: Icons.delete_forever_rounded,
+              title: 'Delete Account',
+              subtitle: 'Permanently delete your account',
+              textColor: AppTheme.accentDanger,
+              onTap: _deleteAccount,
+            ),
+            
+            const SizedBox(height: 32),
+            
+            // Logout button
+            OutlinedButton.icon(
+              onPressed: _logout,
+              icon: Icon(Icons.logout_rounded, color: AppTheme.accentDanger),
+              label: Text(
+                'Logout',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.accentDanger,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: AppTheme.accentDanger),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // App info
+            Center(
+              child: Column(
+                children: [
+                  Text(
+                    'EchoFort v1.0.0',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: AppTheme.textTertiary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '© 2025 Echofort Technology',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: AppTheme.textTertiary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileSection() {
+    return StandardCard(
+      child: Row(
         children: [
-          // Protection Settings
-          _buildSectionHeader('Protection'),
-          _buildSwitchTile(
-            'Auto Call Recording',
-            'Automatically record suspicious calls',
-            Icons.call_end,
-            _autoCallRecording,
-            (value) => setState(() => _autoCallRecording = value),
+          // Avatar
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              gradient: AppTheme.primaryGradient,
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                _userName.substring(0, 1),
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ),
           ),
-          _buildSwitchTile(
-            'Auto SMS Scanning',
-            'Scan all incoming messages',
-            Icons.message,
-            _autoSMSScanning,
-            (value) => setState(() => _autoSMSScanning = value),
-          ),
-          _buildSwitchTile(
-            'Location Tracking',
-            'Share location with family members',
-            Icons.location_on,
-            _locationTracking,
-            (value) => setState(() => _locationTracking = value),
-          ),
-
-          const Divider(),
-
-          // Notifications
-          _buildSectionHeader('Notifications'),
-          _buildSwitchTile(
-            'Push Notifications',
-            'Receive alerts and updates',
-            Icons.notifications,
-            _notificationsEnabled,
-            (value) => setState(() => _notificationsEnabled = value),
-          ),
-          _buildNavigationTile(
-            'Notification Preferences',
-            'Customize notification types',
-            Icons.tune,
-            () {
-              // TODO: Navigate to notification preferences
-            },
-          ),
-
-          const Divider(),
-
-          // Appearance
-          _buildSectionHeader('Appearance'),
-          _buildSelectionTile(
-            'Language',
-            _language,
-            Icons.language,
-            () => _showLanguageDialog(),
-          ),
-          _buildSelectionTile(
-            'Theme',
-            _theme,
-            Icons.palette,
-            () => _showThemeDialog(),
-          ),
-
-          const Divider(),
-
-          // Privacy & Security
-          _buildSectionHeader('Privacy & Security'),
-          _buildNavigationTile(
-            'Privacy Settings',
-            'Manage your privacy',
-            Icons.privacy_tip,
-            () {
-              // TODO: Navigate to privacy settings
-            },
-          ),
-          _buildNavigationTile(
-            'Two-Factor Authentication',
-            'Add extra security',
-            Icons.security,
-            () {
-              // TODO: Navigate to 2FA setup
-            },
-          ),
-          _buildNavigationTile(
-            'Blocked Numbers',
-            'Manage blocked contacts',
-            Icons.block,
-            () {
-              // TODO: Navigate to blocked numbers
-            },
-          ),
-
-          const Divider(),
-
-          // Data & Storage
-          _buildSectionHeader('Data & Storage'),
-          _buildNavigationTile(
-            'Storage Usage',
-            'Manage app storage',
-            Icons.storage,
-            () {
-              // TODO: Navigate to storage management
-            },
-          ),
-          _buildNavigationTile(
-            'Clear Cache',
-            'Free up space',
-            Icons.cleaning_services,
-            () => _showClearCacheDialog(),
-          ),
-          _buildNavigationTile(
-            'Export Data',
-            'Download your data',
-            Icons.download,
-            () {
-              // TODO: Export user data
-            },
-          ),
-
-          const Divider(),
-
-          // About
-          _buildSectionHeader('About'),
-          _buildNavigationTile(
-            'Help & Support',
-            'Get help with the app',
-            Icons.help,
-            () {
-              // TODO: Navigate to help
-            },
-          ),
-          _buildNavigationTile(
-            'Terms of Service',
-            'Read our terms',
-            Icons.description,
-            () {
-              // TODO: Navigate to terms
-            },
-          ),
-          _buildNavigationTile(
-            'Privacy Policy',
-            'Read our privacy policy',
-            Icons.policy,
-            () {
-              // TODO: Navigate to privacy policy
-            },
-          ),
-          _buildNavigationTile(
-            'About EchoFort',
-            'Version 1.0.0',
-            Icons.info,
-            () => _showAboutDialog(),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Danger Zone
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+          
+          const SizedBox(width: 16),
+          
+          // User info
+          Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Danger Zone',
+                Text(
+                  _userName,
                   style: TextStyle(
                     fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.red,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 12),
-                OutlinedButton(
-                  onPressed: () => _showDeleteAccountDialog(),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.red,
-                    side: const BorderSide(color: Colors.red),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                const SizedBox(height: 4),
+                Text(
+                  _userEmail,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: AppTheme.textSecondary,
                   ),
-                  child: const Text('Delete Account'),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _userPhone,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                    color: AppTheme.textTertiary,
+                  ),
                 ),
               ],
             ),
           ),
-
-          const SizedBox(height: 32),
+          
+          // Edit button
+          IconButton(
+            icon: Icon(
+              Icons.edit_rounded,
+              color: AppTheme.primarySolid,
+            ),
+            onPressed: _navigateToProfile,
+          ),
         ],
       ),
     );
@@ -213,179 +575,167 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Text(
         title,
         style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-          color: Theme.of(context).primaryColor,
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
+          color: AppTheme.textPrimary,
         ),
       ),
     );
   }
 
-  Widget _buildSwitchTile(
-    String title,
-    String subtitle,
-    IconData icon,
-    bool value,
-    Function(bool) onChanged,
-  ) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      subtitle: Text(subtitle),
-      trailing: Switch(
-        value: value,
-        onChanged: onChanged,
-      ),
-    );
-  }
-
-  Widget _buildNavigationTile(
-    String title,
-    String subtitle,
-    IconData icon,
-    VoidCallback onTap,
-  ) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      subtitle: Text(subtitle),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: onTap,
-    );
-  }
-
-  Widget _buildSelectionTile(
-    String title,
-    String value,
-    IconData icon,
-    VoidCallback onTap,
-  ) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      subtitle: Text(value),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: onTap,
-    );
-  }
-
-  void _showLanguageDialog() {
-    final languages = ['English', 'Hindi', 'Spanish', 'French', 'German'];
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Select Language'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: languages.map((lang) {
-            return RadioListTile<String>(
-              title: Text(lang),
-              value: lang,
-              groupValue: _language,
-              onChanged: (value) {
-                setState(() => _language = value!);
-                Navigator.pop(context);
-              },
-            );
-          }).toList(),
-        ),
-      ),
-    );
-  }
-
-  void _showThemeDialog() {
-    final themes = ['System', 'Light', 'Dark'];
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Select Theme'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: themes.map((theme) {
-            return RadioListTile<String>(
-              title: Text(theme),
-              value: theme,
-              groupValue: _theme,
-              onChanged: (value) {
-                setState(() => _theme = value!);
-                Navigator.pop(context);
-              },
-            );
-          }).toList(),
-        ),
-      ),
-    );
-  }
-
-  void _showClearCacheDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Clear Cache?'),
-        content: const Text(
-          'This will clear temporary files and free up space. Your data will not be affected.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Cache cleared successfully')),
-              );
-            },
-            child: const Text('Clear'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showAboutDialog() {
-    showAboutDialog(
-      context: context,
-      applicationName: 'EchoFort',
-      applicationVersion: '1.0.0',
-      applicationIcon: const Icon(Icons.shield, size: 48),
-      children: [
-        const Text(
-          'EchoFort is a comprehensive scam protection platform that helps you stay safe from fraud, scams, and cyber threats.',
-        ),
-      ],
-    );
-  }
-
-  void _showDeleteAccountDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Account?'),
-        content: const Text(
-          'This action cannot be undone. All your data will be permanently deleted.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // TODO: Delete account
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
+  Widget _buildSettingItem({
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    Widget? trailing,
+    Color? textColor,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: StandardCard(
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+          child: Padding(
+            padding: const EdgeInsets.all(4),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: (textColor ?? AppTheme.primarySolid).withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    icon,
+                    color: textColor ?? AppTheme.primarySolid,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: textColor ?? AppTheme.textPrimary,
+                        ),
+                      ),
+                      if (subtitle != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w400,
+                            color: AppTheme.textTertiary,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                if (trailing != null)
+                  trailing
+                else
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    color: AppTheme.textTertiary,
+                  ),
+              ],
             ),
-            child: const Text('Delete'),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildToggleItem({
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: StandardCard(
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppTheme.primarySolid.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: AppTheme.primarySolid,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                        color: AppTheme.textTertiary,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            Switch(
+              value: value,
+              onChanged: onChanged,
+              activeColor: AppTheme.primarySolid,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildConsentItem(String label, bool initialValue) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label),
+          Switch(
+            value: initialValue,
+            onChanged: (value) {
+              // TODO: Update consent
+            },
+            activeColor: AppTheme.primarySolid,
           ),
         ],
       ),
