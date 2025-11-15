@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../widgets/echofort_logo.dart';
+import '../../theme/app_theme.dart';
 import '../auth/login_screen.dart';
 
+/// Onboarding Screen
+/// 
+/// 3-slide onboarding introducing EchoFort's key features
+/// with new branded design system
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({super.key});
+  const OnboardingScreen({Key? key}) : super(key: key);
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -15,43 +22,56 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   final List<OnboardingPage> _pages = [
     OnboardingPage(
-      title: 'Guardian Protection System',
-      description: 'Military-grade AI protection against scams, harassment, and digital threats. Real-time analysis with 99.9% accuracy.',
-      icon: Icons.security,
-      gradient: const LinearGradient(
-        colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
+      title: 'AI-Powered Scam Detection',
+      description: 'Real-time call screening with advanced AI that detects scams, frauds, and digital arrest threats before you answer.',
+      icon: Icons.security_rounded,
+      iconColor: AppTheme.primarySolid,
     ),
     OnboardingPage(
-      title: 'Complete Family Safety Suite',
-      description: 'Monitor, protect, and respond to threats across all family members. Comprehensive safety tools in one platform.',
-      icon: Icons.family_restroom,
-      gradient: const LinearGradient(
-        colors: [Color(0xFF1E3A8A), Color(0xFFFFFFFF)],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ),
+      title: 'Complete Family Safety',
+      description: 'GPS tracking, geofencing, and real-time alerts to keep your entire family safe and connected.',
+      icon: Icons.family_restroom_rounded,
+      iconColor: AppTheme.accentSuccess,
     ),
     OnboardingPage(
-      title: 'Instant Legal Response System',
-      description: 'AI-assisted complaint filing with automatic evidence collection. Professional legal support at your fingertips.',
-      icon: Icons.gavel,
-      gradient: const LinearGradient(
-        colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
-        begin: Alignment.topRight,
-        end: Alignment.bottomLeft,
-      ),
+      title: 'Legal Protection & Evidence',
+      description: 'Automatic evidence collection and AI-assisted complaint filing for instant legal response.',
+      icon: Icons.gavel_rounded,
+      iconColor: AppTheme.accentWarning,
     ),
   ];
 
   @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // Set status bar to dark mode
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+      ),
+    );
+
     return Scaffold(
+      backgroundColor: AppTheme.backgroundWhite,
       body: SafeArea(
         child: Column(
           children: [
+            // Logo at top
+            Padding(
+              padding: const EdgeInsets.only(top: 24, bottom: 16),
+              child: const EchoFortLogo(
+                size: 48,
+                variant: LogoVariant.primary,
+              ),
+            ),
+            
+            // Page view
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
@@ -60,6 +80,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 itemBuilder: (context, index) => _buildPage(_pages[index]),
               ),
             ),
+            
+            // Bottom navigation
             _buildBottomBar(),
           ],
         ),
@@ -68,67 +90,55 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Widget _buildPage(OnboardingPage page) {
-    return Container(
-      decoration: BoxDecoration(gradient: page.gradient),
-      child: Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Logo
-            Image.asset(
-              'assets/images/echofort_logo.png',
-              width: 120,
-              height: 120,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Icon with gradient background
+          Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              gradient: AppTheme.primaryGradient,
+              shape: BoxShape.circle,
+              boxShadow: AppTheme.shadowPrimary,
             ),
-            const SizedBox(height: 60),
-            
-            // Icon
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Icon(
-                page.icon,
-                size: 60,
-                color: const Color(0xFF2196F3),
-              ),
+            child: Icon(
+              page.icon,
+              size: 60,
+              color: Colors.white,
             ),
-            const SizedBox(height: 40),
-            
-            // Title
-            Text(
-              page.title,
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1A1A1A),
-              ),
-              textAlign: TextAlign.center,
+          ),
+          
+          const SizedBox(height: 48),
+          
+          // Title
+          Text(
+            page.title,
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.textPrimary,
+              height: 1.3,
             ),
-            const SizedBox(height: 16),
-            
-            // Description
-            Text(
-              page.description,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[700],
-                height: 1.5,
-              ),
-              textAlign: TextAlign.center,
+            textAlign: TextAlign.center,
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Description
+          Text(
+            page.description,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+              color: AppTheme.textSecondary,
+              height: 1.5,
             ),
-          ],
-        ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
@@ -137,7 +147,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.backgroundWhite,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -157,37 +167,50 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               (index) => _buildDot(index == _currentPage),
             ),
           ),
+          
           const SizedBox(height: 24),
           
           // Buttons
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              TextButton(
-                onPressed: () => _skipOnboarding(),
-                child: Text(
-                  'Skip',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 16,
+              // Skip button
+              if (_currentPage < _pages.length - 1)
+                Expanded(
+                  child: TextButton(
+                    onPressed: _skipOnboarding,
+                    child: Text(
+                      'Skip',
+                      style: TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-              ElevatedButton(
-                onPressed: () => _nextPage(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2196F3),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+              
+              const SizedBox(width: 16),
+              
+              // Next/Get Started button
+              Expanded(
+                flex: 2,
+                child: ElevatedButton(
+                  onPressed: _nextPage,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primarySolid,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                    ),
+                    elevation: 0,
                   ),
-                ),
-                child: Text(
-                  _currentPage == _pages.length - 1 ? 'Get Started' : 'Next',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                  child: Text(
+                    _currentPage == _pages.length - 1 ? 'Get Started' : 'Next',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
@@ -205,7 +228,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       width: isActive ? 24 : 8,
       height: 8,
       decoration: BoxDecoration(
-        color: isActive ? const Color(0xFF2196F3) : Colors.grey[300],
+        color: isActive ? AppTheme.primarySolid : AppTheme.borderLight,
         borderRadius: BorderRadius.circular(4),
       ),
     );
@@ -238,12 +261,12 @@ class OnboardingPage {
   final String title;
   final String description;
   final IconData icon;
-  final LinearGradient gradient;
+  final Color iconColor;
 
   OnboardingPage({
     required this.title,
     required this.description,
     required this.icon,
-    required this.gradient,
+    required this.iconColor,
   });
 }
